@@ -1,4 +1,4 @@
-FROM rust:1.86-bookworm AS rust-build
+FROM rust:nightly-bookworm AS rust-build
 
 ARG TULIPROX_REF=master
 ARG RUST_TARGET=x86_64-unknown-linux-musl
@@ -23,7 +23,7 @@ RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tulip
 RUN cargo build -p tuliprox --target "${RUST_TARGET}" --release
 
 
-FROM rust:1.86-bookworm AS web-build
+FROM rust:nightly-bookworm AS web-build
 
 ARG TULIPROX_REF=master
 
