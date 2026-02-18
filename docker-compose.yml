@@ -51,6 +51,6 @@ services:
       - TULIPROX_ARGS=
 
       # ── Debug ─────────────────────────────────────────────────────────────
-      - DEBUG=false
+      - DEBUG=true
 
     restart: unless-stopped

@@ -16,7 +16,7 @@ cd "${0%/*}"
 find . -maxdepth 1 -type f ! -name '*.sh' -delete 2>/dev/null || true
 rm -rf ./ovpn_udp ./ovpn_tcp 2>/dev/null || true
 
-curl -sSL "${base_url}/${bundle}" -o openvpn.zip
+curl -fsSL --max-time 120 "${base_url}/${bundle}" -o openvpn.zip
 unzip -q openvpn.zip
 rm -f openvpn.zip
 
