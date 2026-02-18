@@ -23,6 +23,15 @@ log_dir="/app/config/logs/tuliprox"
 mkdir -p "${log_dir}"
 chown -R tuliprox:tuliprox "${log_dir}" 2>/dev/null || true
 
+config_file="/app/config/config.yml"
+if [ ! -f "${config_file}" ]; then
+    log "[tuliprox] waiting for ${config_file} to exist before starting"
+    while [ ! -f "${config_file}" ]; do
+        sleep 5
+    done
+    log "[tuliprox] config found, starting"
+fi
+
 debug_log "starting tuliprox"
 
 # Note: piping to s6-log means this script remains PID 1 of the service (not the app).
