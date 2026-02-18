@@ -16,7 +16,4 @@ rm -f openvpn.zip
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
     echo "$(basename -- "${config_file}")" >> list.txt
-
-    sed -i "s/AES-256-CBC/AES-128-GCM/g" "${config_file}" || true
-    sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/surfshark-openvpn-credentials.txt|g" "${config_file}" || true
 done

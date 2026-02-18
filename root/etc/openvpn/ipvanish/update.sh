@@ -20,7 +20,4 @@ rm -f openvpn.zip
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
     echo "$(basename -- "${config_file}")" >> list.txt
-
-    # Ensure credentials path points to our runtime config dir
-    sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/ipvanish-openvpn-credentials.txt|g" "${config_file}" || true
 done

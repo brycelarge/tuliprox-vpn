@@ -32,6 +32,4 @@ log "[OpenVPN ProtonVPN] found $(ls ./*.ovpn | wc -l) config file(s)"
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
     echo "$(basename -- "${config_file}")" >> list.txt
-
-    sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/protonvpn-openvpn-credentials.txt|g" "${config_file}" || true
 done

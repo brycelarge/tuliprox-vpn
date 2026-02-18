@@ -37,6 +37,4 @@ fi
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
     echo "$(basename -- "${config_file}")" >> list.txt
-
-    sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/vyprvpn-openvpn-credentials.txt|g" "${config_file}" || true
 done

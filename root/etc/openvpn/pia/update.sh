@@ -33,10 +33,6 @@ for (( i=1; i<${NUMBER_OF_CONFIG_TYPES}+1; i++ )); do
     for config_file in *.ovpn; do
         [ -f "${config_file}" ] || continue
         echo "$(basename -- "${config_file}")" >> list.txt
-
-        sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/pia-openvpn-credentials.txt|g" "${config_file}" || true
-        sed -i "s|ca ca\.rsa\.\([0-9]*\)\.crt|ca /app/config/openvpn/pia/${folder_with_escaped_slash}ca\.rsa\.\1\.crt|g" "${config_file}" || true
-        sed -i "s|crl-verify crl\.rsa\.\([0-9]*\)\.pem|crl-verify /app/config/openvpn/pia/${folder_with_escaped_slash}crl\.rsa\.\1\.pem|g" "${config_file}" || true
     done
 
     if [ -n "${CONFIG_FOLDERS[$i-1]}" ]; then
