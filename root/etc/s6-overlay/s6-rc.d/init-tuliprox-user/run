@@ -61,6 +61,9 @@ if [ ! -f /app/config/source.yml ]; then
 fi
 
 if [ ! -f /app/config/api-proxy.yml ]; then
-    cp /app/defaults/api-proxy.yml /app/config/api-proxy.yml
+    # Detect the container's LAN IP for HDHomeRun BaseURL advertisement
+    host_ip="$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}' | head -1)"
+    host_ip="${host_ip:-0.0.0.0}"
+    sed "s/host: REPLACE_WITH_HOST_IP/host: ${host_ip}/" /app/defaults/api-proxy.yml > /app/config/api-proxy.yml
     chown tuliprox:tuliprox /app/config/api-proxy.yml
 fi
