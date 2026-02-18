@@ -40,7 +40,7 @@ services:
       # Comma-separated DNS servers (optional)
       - NAME_SERVERS=
       # Comma-separated CIDRs to route outside the tunnel (optional)
-      - LOCAL_NETWORK=
+      - LOCAL_NETWORK=${LOCAL_NETWORK:-}
 
       # ── Privoxy ───────────────────────────────────────────────────────────
       - PRIVOXY_ENABLED=false

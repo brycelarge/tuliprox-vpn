@@ -140,8 +140,24 @@ Which writes `/app/config/openvpn/surfshark_map.json`. If present, `OPENVPN_CONF
 - **`NAME_SERVERS`**
   - Optional comma-separated DNS servers (overwrites `/etc/resolv.conf`).
 
-- **`LOCAL_NETWORK`**
-  - Optional comma-separated CIDRs that should be routed outside the VPN tunnel (so you can still reach LAN services).
+- **`LOCAL_NETWORK`** ⚠️ **Required when `VPN_ENABLED=true` if you want to access the web UI or any LAN service**
+  - Comma-separated CIDRs that should be routed **outside** the VPN tunnel via your local gateway.
+  - When OpenVPN connects it takes over the default route — without this, all traffic (including port 8901) goes through the tunnel and your host machine can no longer reach the container.
+  - Set this to your LAN subnet. Common values:
+    ```
+    LOCAL_NETWORK=192.168.0.0/24
+    LOCAL_NETWORK=192.168.1.0/24
+    LOCAL_NETWORK=10.0.0.0/24
+    ```
+  - Multiple subnets (comma-separated):
+    ```
+    LOCAL_NETWORK=192.168.0.0/24,10.0.0.0/8
+    ```
+  - Set in your `.env` file:
+    ```sh
+    LOCAL_NETWORK=192.168.0.0/24
+    ```
+  - **If the tuliprox web UI (port 8901) stops responding after VPN connects, this is the fix.**
 
 
 ## Privoxy
@@ -297,6 +313,11 @@ Edit `.env`:
 ```sh
 OPENVPN_USERNAME=your_service_username
 OPENVPN_PASSWORD=your_service_password
+OPENVPN_PROVIDER=NORDVPN
+OPENVPN_CONFIG=us9196.nordvpn.com.udp
+
+# ⚠️ Set this to your LAN subnet — required for web UI access when VPN is enabled
+LOCAL_NETWORK=192.168.0.0/24
 ```
 
 > The `.env` file is gitignored — never commit credentials.
