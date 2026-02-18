@@ -25,9 +25,9 @@ services:
       # ── VPN ──────────────────────────────────────────────────────────────
       - VPN_ENABLED=true
       # Supported: CUSTOM, PIA, SURFSHARK, IPVANISH, NORDVPN, VYPRVPN, PROTONVPN
-      - OPENVPN_PROVIDER=NORDVPN
+      - OPENVPN_PROVIDER=${OPENVPN_PROVIDER}
       # Specific config file (optional — omit to use first .ovpn found)
-      - OPENVPN_CONFIG=
+      - OPENVPN_CONFIG=${OPENVPN_CONFIG}
       - OPENVPN_PROTOCOL=udp
       - OPENVPN_USERNAME=${OPENVPN_USERNAME}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
