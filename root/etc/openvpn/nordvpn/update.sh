@@ -29,9 +29,6 @@ for subdir in ovpn_udp ovpn_tcp; do
         [ -f "${cfg}" ] || continue
         echo "${cfg#./}" >> list.txt
 
-        debug_log "[OpenVPN NordVPN] cleaning ${cfg}"
-        /scripts/openvpn-config-clean.sh "${cfg}" || true
-
         # ensure cipher/data-ciphers compatible with modern OpenVPN
         if grep -q '^cipher AES-256-CBC' "${cfg}"; then
             sed -i -e 's/^cipher AES-256-CBC$/cipher AES-256-GCM\ndata-ciphers AES-256-GCM/' "${cfg}" || true

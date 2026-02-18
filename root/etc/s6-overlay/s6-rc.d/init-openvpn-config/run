@@ -61,7 +61,6 @@ if [ "${vpn_provider_lc}" != "custom" ]; then
         : > "${vpn_dir}/${vpn_provider_lc}/list.txt"
         find "${vpn_dir}/${vpn_provider_lc}" -maxdepth 2 -type f -name '*.ovpn' | while read -r cfg; do
             echo "$(basename -- "${cfg}")" >> "${vpn_dir}/${vpn_provider_lc}/list.txt"
-            /scripts/openvpn-config-clean.sh "${cfg}" || true
         done
     fi
 else
@@ -119,6 +118,10 @@ if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
 fi
 
 log "[OpenVPN] using config: ${OPENVPN_CONFIG_FILE}"
+
+# Clean only the selected config (not all provider configs)
+debug_log "[OpenVPN] cleaning selected config"
+/scripts/openvpn-config-clean.sh "${OPENVPN_CONFIG_FILE}" || true
 
 # Persist resolved paths to s6 container environment so longruns inherit them
 mkdir -p /run/s6/container_environment

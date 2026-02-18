@@ -95,9 +95,11 @@ Environment variables:
   - The config filename (with or without `.ovpn`).
   - If omitted, the first `*.ovpn` found in `/app/config/openvpn` is used.
 
-When using providers (PIA/SURFSHARK/VYPRVPN/IPVANISH/NORDVPN/PROTONVPN), configs are downloaded on container start and staged into:
+When using providers (PIA/SURFSHARK/VYPRVPN/IPVANISH/NORDVPN/PROTONVPN), configs are downloaded on first container start and staged into the config volume at:
 
 - `/app/config/openvpn/<provider>/`
+
+**Configs are persisted across restarts** — the download only happens once (when the provider directory doesn't exist yet).
 
 You can set `OPENVPN_CONFIG` to a filename in that provider folder (with or without `.ovpn`).
 
@@ -105,9 +107,20 @@ Provider scripts live in the image at:
 
 - `/etc/openvpn/<provider>/update.sh`
 
-For full details, see:
+#### Force re-download of provider configs
 
-- `/etc/openvpn/README.md`
+To re-download configs (e.g. after a provider updates their servers), either:
+
+**Option A** — set the env var (re-downloads on next start, then resets):
+```yaml
+- OPENVPN_FORCE_UPDATE=true
+```
+
+**Option B** — delete the staged provider directory from your config volume:
+```sh
+rm -rf ./data/config/openvpn/nordvpn   # replace nordvpn with your provider
+docker compose restart
+```
 
 For Surfshark, you can optionally generate a friendly-name mapping file:
 

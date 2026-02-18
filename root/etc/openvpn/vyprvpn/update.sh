@@ -38,10 +38,7 @@ fi
 : > list.txt
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
-    debug_log "[OpenVPN VyprVPN] cleaning ${config_file}"
     echo "$(basename -- "${config_file}")" >> list.txt
-
-    /scripts/openvpn-config-clean.sh "${config_file}" || true
 
     sed -i "s|auth-user-pass.*|auth-user-pass /app/config/openvpn/vyprvpn-openvpn-credentials.txt|g" "${config_file}" || true
 done
