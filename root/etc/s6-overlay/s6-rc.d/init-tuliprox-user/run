@@ -59,3 +59,8 @@ if [ ! -f /app/config/source.yml ]; then
     cp /app/defaults/source.yml /app/config/source.yml
     chown tuliprox:tuliprox /app/config/source.yml
 fi
+
+if [ ! -f /app/config/api-proxy.yml ]; then
+    cp /app/defaults/api-proxy.yml /app/config/api-proxy.yml
+    chown tuliprox:tuliprox /app/config/api-proxy.yml
+fi
