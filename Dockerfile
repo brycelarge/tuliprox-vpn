@@ -50,9 +50,22 @@ RUN apt-get update && \
 
 RUN rustup target add wasm32-unknown-unknown
 
-# Cache trunk + wasm-bindgen install — only re-runs when versions change
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo install --locked trunk@0.21.8 wasm-bindgen-cli@0.2.100
+# Install trunk + wasm-bindgen from pre-built binaries (avoids OOM from compiling)
+ARG TRUNK_VERSION=0.21.8
+ARG WASM_BINDGEN_VERSION=0.2.100
+
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "${ARCH}" in \
+        x86_64)  TB_ARCH="x86_64-unknown-linux-gnu"; WB_ARCH="x86_64-unknown-linux-musl" ;; \
+        aarch64) TB_ARCH="aarch64-unknown-linux-gnu"; WB_ARCH="aarch64-unknown-linux-musl" ;; \
+        *) echo "Unsupported arch: ${ARCH}"; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-${TB_ARCH}.tar.gz" \
+        | tar -xz -C /usr/local/bin trunk; \
+    curl -fsSL "https://github.com/rustwasm/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-${WB_ARCH}.tar.gz" \
+        | tar -xz --strip-components=1 -C /usr/local/bin "wasm-bindgen-${WASM_BINDGEN_VERSION}-${WB_ARCH}/wasm-bindgen"; \
+    chmod +x /usr/local/bin/trunk /usr/local/bin/wasm-bindgen
 
 WORKDIR /src
 COPY --from=source /src .

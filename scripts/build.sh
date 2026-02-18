@@ -25,7 +25,7 @@ DOCKER_REPO="ghcr.io/brycelarge/tuliprox-vpn"
 PUSH=false
 BUILD_LATEST=false
 BUILD_NEXT=false
-PLATFORMS="linux/amd64,linux/arm64"
+PLATFORMS="linux/amd64"
 SINGLE_PLATFORM=false
 RUST_TARGET="x86_64-unknown-linux-musl"
 
