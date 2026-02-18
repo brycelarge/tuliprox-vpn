@@ -1,0 +1,36 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+set -euo pipefail
+
+log() {
+    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
+}
+
+debug_log() {
+    if [ "${DEBUG:-false}" = "true" ]; then
+        log "DEBUG: $*"
+    fi
+}
+
+umask "${UMASK:-022}"
+
+cd /app
+
+args=( -s -p /app/config )
+
+if [ -n "${TULIPROX_ARGS:-}" ]; then
+    # Intentionally allow word splitting for user-supplied args
+    # shellcheck disable=SC2206
+    extra_args=( ${TULIPROX_ARGS} )
+    args+=( "${extra_args[@]}" )
+fi
+
+log_dir="/app/config/logs/tuliprox"
+mkdir -p "${log_dir}"
+chown -R tuliprox:tuliprox "${log_dir}" 2>/dev/null || true
+
+debug_log "starting tuliprox"
+
+# Note: piping to s6-log means this script remains PID 1 of the service (not the app).
+exec s6-setuidgid tuliprox /app/tuliprox "${args[@]}" 2>&1 | s6-log -b n20 s1000000 T "${log_dir}"

@@ -1,0 +1,50 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+set -euo pipefail
+
+puid="${PUID:-133}"
+pgid="${PGID:-144}"
+
+# Normalize umask but do not enforce here; longrun sets it before exec.
+_umask="${UMASK:-022}"
+
+if ! getent group tuliprox >/dev/null 2>&1; then
+    addgroup --system tuliprox >/dev/null 2>&1 || true
+fi
+
+if ! getent passwd tuliprox >/dev/null 2>&1; then
+    adduser \
+        --disabled-password \
+        --home /app \
+        --ingroup tuliprox \
+        --no-create-home \
+        --system \
+        tuliprox >/dev/null 2>&1 || true
+fi
+
+# Adjust group ID if needed
+current_gid="$(getent group tuliprox | cut -d: -f3 || true)"
+if [ -n "${current_gid}" ] && [ "${current_gid}" != "${pgid}" ]; then
+    if ! getent group "${pgid}" >/dev/null 2>&1; then
+        groupmod -g "${pgid}" tuliprox
+    fi
+fi
+
+# Adjust user ID and primary group if needed
+current_uid="$(getent passwd tuliprox | cut -d: -f3 || true)"
+if [ -n "${current_uid}" ] && [ "${current_uid}" != "${puid}" ]; then
+    usermod -u "${puid}" tuliprox
+fi
+
+# Ensure primary group is correct (either by name or gid)
+usermod -g "${pgid}" tuliprox 2>/dev/null || usermod -g tuliprox tuliprox
+
+# Ensure app dirs exist and have correct ownership
+for d in /app/config /app/data /app/backup /app/downloads; do
+    mkdir -p "${d}"
+    chown -R tuliprox:tuliprox "${d}"
+done
+
+mkdir -p /app/config/logs/tuliprox /app/config/logs/openvpn
+chown -R tuliprox:tuliprox /app/config/logs

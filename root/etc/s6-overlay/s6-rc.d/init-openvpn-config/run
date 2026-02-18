@@ -1,0 +1,121 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+set -euo pipefail
+
+log() {
+    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
+}
+
+debug_log() {
+    if [ "${DEBUG:-false}" = "true" ]; then
+        log "DEBUG: $*"
+    fi
+}
+
+vpn_dir="/app/config/openvpn"
+mkdir -p "${vpn_dir}"
+chown -R tuliprox:tuliprox "${vpn_dir}" 2>/dev/null || true
+
+if [ "${VPN_ENABLED:-false}" != "true" ]; then
+    log "[OpenVPN] VPN disabled"
+    exit 0
+fi
+
+vpn_provider="${OPENVPN_PROVIDER:-CUSTOM}"
+vpn_provider_lc="$(echo "${vpn_provider}" | tr '[:upper:]' '[:lower:]')"
+
+# Ensure tun exists
+if [ ! -c /dev/net/tun ]; then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 0666 /dev/net/tun
+fi
+
+# DNS override
+if [ -n "${NAME_SERVERS:-}" ]; then
+    : > /etc/resolv.conf
+    IFS=',' read -ra servers <<< "${NAME_SERVERS}"
+    for s in "${servers[@]}"; do
+        s="$(echo "${s}" | sed -e 's~^[ \t]*~~;s~[ \t]*$~~')"
+        [ -n "${s}" ] || continue
+        echo "nameserver ${s}" >> /etc/resolv.conf
+    done
+fi
+
+if [ "${vpn_provider_lc}" != "custom" ]; then
+    provider_src_dir="/etc/openvpn/${vpn_provider_lc}"
+    if [ -d "${provider_src_dir}" ] && [ ! -d "${vpn_dir}/${vpn_provider_lc}" ]; then
+        if [ -x "${provider_src_dir}/update.sh" ]; then
+            log "[OpenVPN] fetching ${vpn_provider_lc} config files"
+            "${provider_src_dir}/update.sh"
+        fi
+
+        log "[OpenVPN] staging provider configs to ${vpn_dir}/${vpn_provider_lc}"
+        mkdir -p "${vpn_dir}/${vpn_provider_lc}"
+        cp -R "${provider_src_dir}/." "${vpn_dir}/${vpn_provider_lc}/" 2>/dev/null || true
+        chown -R tuliprox:tuliprox "${vpn_dir}/${vpn_provider_lc}" 2>/dev/null || true
+    fi
+
+    if [ -d "${vpn_dir}/${vpn_provider_lc}" ]; then
+        : > "${vpn_dir}/${vpn_provider_lc}/list.txt"
+        find "${vpn_dir}/${vpn_provider_lc}" -maxdepth 2 -type f -name '*.ovpn' | while read -r cfg; do
+            echo "$(basename -- "${cfg}")" >> "${vpn_dir}/${vpn_provider_lc}/list.txt"
+            /scripts/openvpn-config-clean.sh "${cfg}" || true
+        done
+    fi
+else
+    # remove macOS metadata files if present
+    rm -f "${vpn_dir}/._"* 2>/dev/null || true
+fi
+
+# Create credentials file(s) if env vars are supplied
+if [ -n "${OPENVPN_USERNAME:-}" ] && [ -n "${OPENVPN_PASSWORD:-}" ]; then
+    cred_file="${vpn_dir}/${vpn_provider_lc}-openvpn-credentials.txt"
+    if [ "${vpn_provider_lc}" = "custom" ]; then
+        cred_file="${vpn_dir}/custom-openvpn-credentials.txt"
+    fi
+
+    printf '%s\n%s\n' "${OPENVPN_USERNAME}" "${OPENVPN_PASSWORD}" > "${cred_file}"
+    chmod 600 "${cred_file}"
+    chown tuliprox:tuliprox "${cred_file}" 2>/dev/null || true
+
+    if echo "${OPENVPN_USERNAME}" | grep -Eq '[^a-zA-Z0-9@]+'; then
+        debug_log "[OpenVPN] username contains special characters which could cause auth issues"
+    fi
+    if echo "${OPENVPN_PASSWORD}" | grep -Eq '[^a-zA-Z0-9@]+'; then
+        debug_log "[OpenVPN] password contains special characters which could cause auth issues"
+    fi
+fi
+
+# Local routes (so you can still reach LAN services)
+if [ -n "${LOCAL_NETWORK:-}" ]; then
+    gw="$(ip route list match 0.0.0.0/0 | awk '{print $3; exit}' || true)"
+    intf="$(ip route list match 0.0.0.0/0 | awk '{print $5; exit}' || true)"
+
+    if [ -n "${gw}" ] && [ -n "${intf}" ]; then
+        for net in ${LOCAL_NETWORK//,/ }; do
+            log "[OpenVPN] adding route ${net} via ${gw} dev ${intf}"
+            ip route add "${net}" via "${gw}" dev "${intf}" 2>/dev/null || true
+        done
+    fi
+fi
+
+# Validate config + credentials
+validation_out="$(/scripts/openvpn-config-validation.sh 2>&1)"
+validation_exit=$?
+
+if [ ${validation_exit} -ne 0 ]; then
+    echo "${validation_out}"
+    exit ${validation_exit}
+fi
+
+# shellcheck disable=SC1090
+eval "${validation_out}"
+
+if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
+    log "[OpenVPN] validation did not return OPENVPN_CONFIG_FILE"
+    exit 1
+fi
+
+log "[OpenVPN] using config: ${OPENVPN_CONFIG_FILE}"

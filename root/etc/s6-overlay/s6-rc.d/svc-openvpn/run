@@ -1,0 +1,61 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+
+set -euo pipefail
+
+log() {
+    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
+}
+
+debug_log() {
+    if [ "${DEBUG:-false}" = "true" ]; then
+        log "DEBUG: $*"
+    fi
+}
+
+if [ "${VPN_ENABLED:-false}" != "true" ]; then
+    log "[OpenVPN] VPN disabled (sleeping)"
+    exec s6-sleep infinity
+fi
+
+validation_out="$(/scripts/openvpn-config-validation.sh)"
+# shellcheck disable=SC1090
+eval "${validation_out}"
+
+if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
+    log "[OpenVPN] OPENVPN_CONFIG_FILE missing"
+    exec s6-sleep infinity
+fi
+
+openvpn_args=(
+    --reneg-sec 0
+    --disable-occ
+    --auth-nocache
+    --mute-replay-warnings
+    --data-ciphers-fallback AES-128-GCM
+    --pull-filter ignore 'route-ipv6'
+    --pull-filter ignore 'ifconfig-ipv6'
+    --pull-filter ignore 'tun-ipv6'
+    --pull-filter ignore 'dhcp-option DNS6'
+    --pull-filter ignore 'reneg-sec'
+    --pull-filter ignore 'persist-tun'
+    --pull-filter ignore 'block-outside-dns'
+)
+
+# Allow user custom options
+if [ -n "${OPENVPN_OPTIONS:-}" ]; then
+    # shellcheck disable=SC2206
+    extra=( ${OPENVPN_OPTIONS} )
+    openvpn_args+=( "${extra[@]}" )
+fi
+
+openvpn_args+=( --config "${OPENVPN_CONFIG_FILE}" )
+
+debug_log "[OpenVPN] OPENVPN_CONFIG_FILE=${OPENVPN_CONFIG_FILE}"
+log "[OpenVPN] starting openvpn"
+
+log_dir="/app/config/logs/openvpn"
+mkdir -p "${log_dir}"
+chown -R tuliprox:tuliprox "${log_dir}" 2>/dev/null || true
+
+exec openvpn "${openvpn_args[@]}" 2>&1 | s6-log -b n20 s1000000 T "${log_dir}"

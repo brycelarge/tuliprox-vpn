@@ -1,9 +1,12 @@
 # tuliprox (s6 / Unraid-ready)
 
-This repo builds a `tuliprox` container image that:
+This repo builds a `tuliprox-vpn` container image that:
 
 - Runs on **Alpine** (`brycelarge/alpine-baseimage:3.21`)
 - Uses **s6-overlay** to supervise the `tuliprox` process
+- Includes an **OpenVPN client** (CUSTOM configs or built-in providers)
+- Includes optional **Privoxy** (HTTP proxy) for VPN-routed traffic
+- Includes built-in **speed testing** tooling
 - Supports Unraid-style runtime user mapping via **`PUID` / `PGID` / `UMASK`**
 
 Upstream project: https://github.com/euzu/tuliprox
@@ -79,11 +82,40 @@ Environment variables:
 
 - **`OPENVPN_PROVIDER`**
   - Default: `CUSTOM`
-  - Only `CUSTOM` is supported right now.
+  - Supported:
+    - `CUSTOM`
+    - `PIA`
+    - `SURFSHARK`
+    - `VYPRVPN`
+    - `IPVANISH`
+    - `NORDVPN`
+    - `PROTONVPN`
 
 - **`OPENVPN_CONFIG`**
   - The config filename (with or without `.ovpn`).
   - If omitted, the first `*.ovpn` found in `/app/config/openvpn` is used.
+
+When using providers (PIA/SURFSHARK/VYPRVPN/IPVANISH/NORDVPN/PROTONVPN), configs are downloaded on container start and staged into:
+
+- `/app/config/openvpn/<provider>/`
+
+You can set `OPENVPN_CONFIG` to a filename in that provider folder (with or without `.ovpn`).
+
+Provider scripts live in the image at:
+
+- `/etc/openvpn/<provider>/update.sh`
+
+For full details, see:
+
+- `/etc/openvpn/README.md`
+
+For Surfshark, you can optionally generate a friendly-name mapping file:
+
+```sh
+/etc/openvpn/surfshark/map.sh
+```
+
+Which writes `/app/config/openvpn/surfshark_map.json`. If present, `OPENVPN_CONFIG` can be a friendly key like `za_johannesburg`.
 
 - **`OPENVPN_USERNAME`** / **`OPENVPN_PASSWORD`**
   - Optional.
@@ -97,6 +129,34 @@ Environment variables:
 
 - **`LOCAL_NETWORK`**
   - Optional comma-separated CIDRs that should be routed outside the VPN tunnel (so you can still reach LAN services).
+
+
+## Privoxy
+
+Privoxy is optional and only runs when:
+
+- `VPN_ENABLED=true`
+- `PRIVOXY_ENABLED=true`
+
+Ports:
+
+- `8118/tcp`
+
+Environment variables:
+
+- **`PRIVOXY_ENABLED`**
+  - Default: `false`
+
+- **`PRIVOXY_PORT`**
+  - Default: `8118`
+
+- **`PRIVOXY_STARTUP_DELAY_SECS`**
+  - Default: `10`
+  - Delay before starting privoxy (gives OpenVPN time to come up).
+
+Logs:
+
+- `/app/config/logs/privoxy`
 
 
 ### Custom OpenVPN config (Unraid-friendly)
