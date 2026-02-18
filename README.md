@@ -402,6 +402,29 @@ user:
 Usernames must be unique across all targets. The `target` name must match a target defined in `source.yml`.
 
 
+## Sidecars
+
+Drop additional apps into `/app/sidecars` to run them inside the container alongside tuliprox. Useful for EPG scrapers, proxy scripts, etc.
+
+### Structure
+
+```
+/app/sidecars/
+└── my-epg-scraper/
+    ├── run.sh       # required — executable entrypoint
+    └── env/         # optional — plain key=value env files
+```
+
+### How it works
+
+- `svc-sidecars` scans `/app/sidecars/` at boot and supervises each `run.sh` as a child process
+- Crashed sidecars restart automatically after 5s
+- Sidecars share the container network — reference them in `source.yml` via `http://127.0.0.1:<port>/`
+- Sidecars run as the `tuliprox` user (`PUID`/`PGID`)
+
+See `UNRAID.md` for a full example.
+
+
 ## Unraid
 
 See `UNRAID.md`.

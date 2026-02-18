@@ -165,7 +165,7 @@ EXPOSE 8901/tcp
 
 EXPOSE 8118/tcp
 
-VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads"]
+VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads", "/app/sidecars"]
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD /usr/local/bin/healthcheck.sh

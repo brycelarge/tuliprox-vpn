@@ -1,0 +1,69 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+# Sidecar supervisor — discovers /app/sidecars/<name>/run.sh and supervises each
+# as a child process. Restarts crashed sidecars automatically.
+
+set -uo pipefail
+
+SIDECARS_DIR="/app/sidecars"
+SCANDIR="/run/sidecar-svscan"
+
+mkdir -p "${SCANDIR}"
+
+if [ ! -d "${SIDECARS_DIR}" ] || [ -z "$(ls -A "${SIDECARS_DIR}" 2>/dev/null)" ]; then
+    echo "[sidecars] no sidecars found in ${SIDECARS_DIR}, sleeping"
+    exec sleep inf
+fi
+
+# Build an s6 scandir from discovered sidecars
+for sidecar_dir in "${SIDECARS_DIR}"/*/; do
+    [ -d "${sidecar_dir}" ] || continue
+    name="$(basename "${sidecar_dir}")"
+    run_script="${sidecar_dir}run.sh"
+
+    if [ ! -f "${run_script}" ]; then
+        echo "[sidecars] skipping ${name}: no run.sh found"
+        continue
+    fi
+
+    if [ ! -x "${run_script}" ]; then
+        chmod +x "${run_script}"
+    fi
+
+    svc_dir="${SCANDIR}/${name}"
+    mkdir -p "${svc_dir}"
+
+    # Generate the s6 run script for this sidecar
+    cat > "${svc_dir}/run" << SVCEOF
+#!/usr/bin/with-contenv bash
+set -uo pipefail
+echo "[sidecar:${name}] starting"
+cd "${sidecar_dir}"
+SVCEOF
+
+    # Inject per-sidecar env vars if an env/ dir exists
+    if [ -d "${sidecar_dir}env" ]; then
+        cat >> "${svc_dir}/run" << SVCEOF
+export \$(cat "${sidecar_dir}env/"* 2>/dev/null | xargs)
+SVCEOF
+    fi
+
+    cat >> "${svc_dir}/run" << SVCEOF
+exec "${run_script}"
+SVCEOF
+
+    chmod +x "${svc_dir}/run"
+
+    # Generate finish script to log crashes
+    cat > "${svc_dir}/finish" << SVCEOF
+#!/usr/bin/with-contenv bash
+echo "[sidecar:${name}] exited with code \$1, restarting in 5s..."
+sleep 5
+SVCEOF
+    chmod +x "${svc_dir}/finish"
+
+    echo "[sidecars] registered sidecar: ${name}"
+done
+
+echo "[sidecars] starting svscan on ${SCANDIR}"
+exec s6-svscan "${SCANDIR}"
