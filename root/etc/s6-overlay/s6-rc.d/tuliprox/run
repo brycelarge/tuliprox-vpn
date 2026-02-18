@@ -35,4 +35,4 @@ fi
 debug_log "starting tuliprox"
 
 # Note: piping to s6-log means this script remains PID 1 of the service (not the app).
-exec s6-setuidgid tuliprox /app/tuliprox "${args[@]}" 2>&1 | s6-log -b n20 s1000000 T "${log_dir}"
+exec s6-setuidgid tuliprox /app/tuliprox "${args[@]}" 2>&1 | s6-log -b n20 s1000000 "${log_dir}"
