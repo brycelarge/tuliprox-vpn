@@ -89,11 +89,23 @@ build_tag() {
         platforms="$(detect_platform)"
     fi
 
+    local cache_args=(
+        --cache-from "type=registry,ref=${DOCKER_REPO}:${tag}-cache"
+    )
+    if [ "${PUSH}" = "true" ]; then
+        cache_args+=( --cache-to "type=registry,ref=${DOCKER_REPO}:${tag}-cache,mode=max" )
+    else
+        cache_args+=( --cache-to "type=local,dest=/tmp/docker-cache-${tag},mode=max" )
+        cache_args+=( --cache-from "type=local,src=/tmp/docker-cache-${tag}" )
+    fi
+
     docker buildx build \
         --platform "${platforms}" \
         -t "${DOCKER_REPO}:${tag}" \
         --build-arg "TULIPROX_REF=${ref}" \
         --build-arg "RUST_TARGET=${RUST_TARGET}" \
+        --build-arg "BUILDKIT_INLINE_CACHE=1" \
+        "${cache_args[@]}" \
         "${push_args[@]}" \
         .
 }

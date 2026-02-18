@@ -1,6 +1,17 @@
-FROM rust:bookworm AS rust-build
+# ── Single fetch stage: clone once, copy into build stages ──────────────────
+FROM alpine:3.21 AS source
 
 ARG TULIPROX_REF=develop
+
+RUN apk add --no-cache git
+
+WORKDIR /src
+RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tuliprox.git .
+
+
+# ── Rust binary build ────────────────────────────────────────────────────────
+FROM rust:bookworm AS rust-build
+
 ARG RUST_TARGET=x86_64-unknown-linux-musl
 
 ENV RUSTFLAGS='-C target-feature=+crt-static'
@@ -9,7 +20,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        git \
         pkg-config \
         musl-tools \
         libssl-dev \
@@ -18,45 +28,47 @@ RUN apt-get update && \
 RUN rustup update && rustup target add "${RUST_TARGET}"
 
 WORKDIR /src
-RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tuliprox.git .
+COPY --from=source /src .
 
-RUN cargo build -p tuliprox --target "${RUST_TARGET}" --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/target \
+    cargo build -p tuliprox --target "${RUST_TARGET}" --release && \
+    cp /src/target/${RUST_TARGET}/release/tuliprox /tuliprox
 
 
+# ── Frontend (WASM/trunk) build ──────────────────────────────────────────────
 FROM rust:bookworm AS web-build
-
-ARG TULIPROX_REF=develop
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        git \
         pkg-config \
         libssl-dev \
         binaryen \
         && rm -rf /var/lib/apt/lists/*
 
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo install --locked trunk@0.21.8 wasm-bindgen-cli@0.2.100
+
+# Cache trunk + wasm-bindgen install — only re-runs when versions change
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install --locked trunk@0.21.8 wasm-bindgen-cli@0.2.100
 
 WORKDIR /src
-RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tuliprox.git .
+COPY --from=source /src .
 
 WORKDIR /src/frontend
-RUN trunk build --release
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    trunk build --release
 
 
+# ── Resource (ffmpeg ts) build ───────────────────────────────────────────────
 FROM alpine:3.21 AS resource-build
 
-ARG TULIPROX_REF=develop
-
-RUN apk add --no-cache \
-        ffmpeg \
-        git
+RUN apk add --no-cache ffmpeg
 
 WORKDIR /src
-RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tuliprox.git .
+COPY --from=source /src/resources ./resources
 
 WORKDIR /src/resources
 RUN for img in channel_unavailable user_connections_exhausted provider_connections_exhausted user_account_expired panel_api_provisioning; do \
@@ -116,7 +128,7 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY --from=rust-build "/src/target/${RUST_TARGET}/release/tuliprox" /app/tuliprox
+COPY --from=rust-build /tuliprox /app/tuliprox
 COPY --from=web-build /src/frontend/dist /app/web
 COPY --from=resource-build /src/resources /app/resources
 
