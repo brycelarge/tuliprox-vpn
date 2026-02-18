@@ -155,6 +155,7 @@ RUN chmod +x /app/tuliprox && \
     chmod +x /usr/local/bin/healthcheck.sh && \
     find /etc/openvpn -name 'update.sh' -exec chmod +x {} + && \
     find /etc/openvpn -name 'map.sh' -exec chmod +x {} + && \
+    find /etc/openvpn -name 'up.sh' -exec chmod +x {} + && \
     find /etc/s6-overlay/s6-rc.d -name 'run' -exec chmod +x {} + && \
     find /etc/s6-overlay/s6-rc.d -name 'up' -exec chmod +x {} +
 

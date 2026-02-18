@@ -110,16 +110,19 @@ if [ -n "${OPENVPN_USERNAME:-}" ] && [ -n "${OPENVPN_PASSWORD:-}" ]; then
     fi
 fi
 
-# Local routes (so you can still reach LAN services)
+# Local routes (so you can still reach LAN services when VPN is up)
 if [ -n "${LOCAL_NETWORK:-}" ]; then
-    gw="$(ip route list match 0.0.0.0/0 | awk '{print $3; exit}' || true)"
-    intf="$(ip route list match 0.0.0.0/0 | awk '{print $5; exit}' || true)"
+    # Explicitly exclude tun0 so we always route via the physical interface (eth0)
+    gw="$(ip route list match 0.0.0.0/0 | awk '$5 != "tun0" {print $3; exit}' || true)"
+    intf="$(ip route list match 0.0.0.0/0 | awk '$5 != "tun0" {print $5; exit}' || true)"
 
     if [ -n "${gw}" ] && [ -n "${intf}" ]; then
         for net in ${LOCAL_NETWORK//,/ }; do
             log "[OpenVPN] adding route ${net} via ${gw} dev ${intf}"
             ip route add "${net}" via "${gw}" dev "${intf}" 2>/dev/null || true
         done
+    else
+        log "[OpenVPN] WARNING: could not determine gateway for LOCAL_NETWORK routes (tun0 excluded)"
     fi
 fi
 
@@ -180,4 +183,7 @@ mkdir -p /run/s6/container_environment
 printf '%s' "${OPENVPN_CONFIG_FILE}" > /run/s6/container_environment/OPENVPN_CONFIG_FILE
 if [ -n "${OPENVPN_AUTH_FILE:-}" ]; then
     printf '%s' "${OPENVPN_AUTH_FILE}" > /run/s6/container_environment/OPENVPN_AUTH_FILE
+fi
+if [ -n "${LOCAL_NETWORK:-}" ]; then
+    printf '%s' "${LOCAL_NETWORK}" > /run/s6/container_environment/LOCAL_NETWORK
 fi

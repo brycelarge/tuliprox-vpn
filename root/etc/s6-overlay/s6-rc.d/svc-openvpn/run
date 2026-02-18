@@ -30,6 +30,7 @@ openvpn_args=(
     --pull-filter ignore 'reneg-sec'
     --pull-filter ignore 'persist-tun'
     --pull-filter ignore 'block-outside-dns'
+    --pull-filter ignore 'redirect-gateway'
 )
 
 # Allow user custom options
