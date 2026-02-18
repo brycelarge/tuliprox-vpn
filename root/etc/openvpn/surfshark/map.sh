@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
+
 # This is a lightweight replacement for the sqlite mapping used in xteve-vpn.
 # It writes a JSON mapping file to /app/config/openvpn/surfshark_map.json
 
@@ -21,4 +24,4 @@ printf '%s' "${clusters_json}" | jq -r '
   | reduce .[] as $i ({}; .[$i.key] = $i.value)
 ' > "${out_file}"
 
-echo "[Surfshark] wrote mapping to ${out_file}" | ts '%Y-%m-%d %H:%M:%S'
+log "[Surfshark] wrote server mapping to ${out_file}"

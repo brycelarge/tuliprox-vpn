@@ -3,15 +3,8 @@
 
 set -euo pipefail
 
-log() {
-    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
-}
-
-debug_log() {
-    if [ "${DEBUG:-false}" = "true" ]; then
-        log "DEBUG: $*"
-    fi
-}
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
 
 umask "${UMASK:-022}"
 

@@ -3,27 +3,17 @@
 
 set -euo pipefail
 
-log() {
-    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
-}
-
-debug_log() {
-    if [ "${DEBUG:-false}" = "true" ]; then
-        log "DEBUG: $*"
-    fi
-}
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
 
 if [ "${VPN_ENABLED:-false}" != "true" ]; then
     log "[OpenVPN] VPN disabled (sleeping)"
     exec s6-sleep infinity
 fi
 
-validation_out="$(/scripts/openvpn-config-validation.sh)"
-# shellcheck disable=SC1090
-eval "${validation_out}"
-
+# OPENVPN_CONFIG_FILE is written to the s6 container environment by init-openvpn-config
 if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
-    log "[OpenVPN] OPENVPN_CONFIG_FILE missing"
+    log "[OpenVPN] OPENVPN_CONFIG_FILE not set — init-openvpn-config may have failed"
     exec s6-sleep infinity
 fi
 
@@ -50,6 +40,14 @@ if [ -n "${OPENVPN_OPTIONS:-}" ]; then
 fi
 
 openvpn_args+=( --config "${OPENVPN_CONFIG_FILE}" )
+
+# Inject --auth-user-pass if credentials file exists and config doesn't already have it
+if [ -n "${OPENVPN_AUTH_FILE:-}" ] && [ -f "${OPENVPN_AUTH_FILE}" ]; then
+    if ! grep -Eq '^auth-user-pass' "${OPENVPN_CONFIG_FILE}" 2>/dev/null; then
+        openvpn_args+=( --auth-user-pass "${OPENVPN_AUTH_FILE}" )
+        debug_log "[OpenVPN] injecting --auth-user-pass ${OPENVPN_AUTH_FILE}"
+    fi
+fi
 
 debug_log "[OpenVPN] OPENVPN_CONFIG_FILE=${OPENVPN_CONFIG_FILE}"
 log "[OpenVPN] starting openvpn"

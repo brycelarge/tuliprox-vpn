@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[OpenVPN IPVanish] grab config files" | ts '%Y-%m-%d %H:%M:%S'
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
+
+log "[OpenVPN IPVanish] fetching config files"
 
 base_url="https://configs.ipvanish.com/configs"
 bundle="configs.zip"
@@ -19,7 +22,7 @@ rm -f openvpn.zip
 : > list.txt
 for config_file in *.ovpn; do
     [ -f "${config_file}" ] || continue
-    echo "[OpenVPN IPVanish] cleaning ${config_file}" | ts '%Y-%m-%d %H:%M:%S'
+    debug_log "[OpenVPN IPVanish] cleaning ${config_file}"
     echo "$(basename -- "${config_file}")" >> list.txt
 
     /scripts/openvpn-config-clean.sh "${config_file}" || true

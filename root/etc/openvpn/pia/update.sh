@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[OpenVPN PIA] grab config files" | ts '%Y-%m-%d %H:%M:%S'
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
+
+log "[OpenVPN PIA] fetching config files"
 
 # If the script is called from elsewhere
 cd "${0%/*}"
@@ -32,7 +35,7 @@ for (( i=1; i<${NUMBER_OF_CONFIG_TYPES}+1; i++ )); do
     : > list.txt
     for config_file in *.ovpn; do
         [ -f "${config_file}" ] || continue
-        echo "[OpenVPN PIA] cleaning ${config_file}" | ts '%Y-%m-%d %H:%M:%S'
+        debug_log "[OpenVPN PIA] cleaning ${config_file}"
         echo "$(basename -- "${config_file}")" >> list.txt
 
         /scripts/openvpn-config-clean.sh "${config_file}" || true

@@ -1,6 +1,6 @@
-FROM rust:nightly-bookworm AS rust-build
+FROM rust:bookworm AS rust-build
 
-ARG TULIPROX_REF=master
+ARG TULIPROX_REF=develop
 ARG RUST_TARGET=x86_64-unknown-linux-musl
 
 ENV RUSTFLAGS='-C target-feature=+crt-static'
@@ -23,9 +23,9 @@ RUN git clone --depth 1 --branch "${TULIPROX_REF}" https://github.com/euzu/tulip
 RUN cargo build -p tuliprox --target "${RUST_TARGET}" --release
 
 
-FROM rust:nightly-bookworm AS web-build
+FROM rust:bookworm AS web-build
 
-ARG TULIPROX_REF=master
+ARG TULIPROX_REF=develop
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -49,7 +49,7 @@ RUN trunk build --release
 
 FROM alpine:3.21 AS resource-build
 
-ARG TULIPROX_REF=master
+ARG TULIPROX_REF=develop
 
 RUN apk add --no-cache \
         ffmpeg \
@@ -127,7 +127,9 @@ COPY scripts/ /scripts/
 
 RUN chmod +x /app/tuliprox && \
     chmod +x /scripts/*.sh && \
-    chmod +x /usr/local/bin/healthcheck.sh
+    chmod +x /usr/local/bin/healthcheck.sh && \
+    find /etc/openvpn -name 'update.sh' -exec chmod +x {} + && \
+    find /etc/openvpn -name 'map.sh' -exec chmod +x {} +
 
 EXPOSE 8901/tcp
 

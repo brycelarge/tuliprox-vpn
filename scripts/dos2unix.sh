@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
+
 if [ -z "${1:-}" ]; then
-    echo "[dos2unix] no parameter supplied for file to convert" | ts '%Y-%m-%d %H:%M:%S'
+    log "[dos2unix] no parameter supplied for file to convert"
     exit 1
 fi
 
 if [ ! -f "${1}" ]; then
-    echo "[dos2unix] file '${1}' does not exist" | ts '%Y-%m-%d %H:%M:%S'
+    log "[dos2unix] file '${1}' does not exist"
     exit 1
 fi
 
@@ -23,7 +26,7 @@ SOURCE_FILE="${1}"
 
 # if the file required conversion then overwrite source file
 if ! grep -q 'Converted 0' "${STDOUT_FILE}"; then
-    echo "[dos2unix] line ending conversion required, moving '${TEMP_FILE}' to '${SOURCE_FILE}'" | ts '%Y-%m-%d %H:%M:%S'
+    debug_log "[dos2unix] line ending conversion required, moving '${TEMP_FILE}' to '${SOURCE_FILE}'"
     mv -f "${TEMP_FILE}" "${SOURCE_FILE}"
 fi
 

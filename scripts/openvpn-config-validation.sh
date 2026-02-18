@@ -3,15 +3,12 @@ set -euo pipefail
 
 # Outputs OPENVPN_CONFIG_FILE and OPENVPN_AUTH_FILE via stdout as KEY=VALUE lines.
 
-log() {
-    echo "$*" | ts '%Y-%m-%d %H:%M:%S' >&2
-}
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
 
-debug_log() {
-    if [ "${DEBUG:-false}" = "true" ]; then
-        log "DEBUG: $*"
-    fi
-}
+# Redirect log output to stderr so stdout stays clean for KEY=VALUE output
+log() { echo "$*" | ts '%Y-%m-%d %H:%M:%S' >&2; }
+debug_log() { if [ "${DEBUG:-false}" = "true" ]; then log "DEBUG: $*"; fi; }
 
 if [ "${VPN_ENABLED:-false}" != "true" ]; then
     echo "VPN_ENABLED=false"
@@ -48,7 +45,17 @@ else
     fi
 
     if [ -z "${config_name}" ]; then
-        config_file="$(find "${provider_dir}" -type f -name '*.ovpn' -print -quit || true)"
+        # NordVPN stores configs in protocol-specific subdirs
+        if [ "${provider_lc}" = "nordvpn" ]; then
+            nord_subdir="${provider_dir}/ovpn_${protocol_lc}"
+            if [ -d "${nord_subdir}" ]; then
+                config_file="$(find "${nord_subdir}" -type f -name '*.ovpn' -print -quit || true)"
+            fi
+        fi
+        # Fall back to any .ovpn in the provider dir (recursive for NordVPN subdirs)
+        if [ -z "${config_file}" ]; then
+            config_file="$(find "${provider_dir}" -type f -name '*.ovpn' -print -quit || true)"
+        fi
     else
         # allow specifying without .ovpn and with or without _udp/_tcp suffix
         name_base="$(echo "${config_name}" | sed 's/\.ovpn$//')"
@@ -59,6 +66,14 @@ else
             config_file="${provider_dir}/${name_base}_${protocol_lc}.ovpn"
         elif [ -f "${provider_dir}/${name_base}" ]; then
             config_file="${provider_dir}/${name_base}"
+        elif [ "${provider_lc}" = "nordvpn" ]; then
+            # NordVPN: look in ovpn_udp/ or ovpn_tcp/ subdir
+            nord_subdir="${provider_dir}/ovpn_${protocol_lc}"
+            if [ -f "${nord_subdir}/${name_base}.ovpn" ]; then
+                config_file="${nord_subdir}/${name_base}.ovpn"
+            elif [ -f "${nord_subdir}/${name_base}" ]; then
+                config_file="${nord_subdir}/${name_base}"
+            fi
         else
             # Surfshark can optionally map friendly names (e.g. za_johannesburg -> actual file prefix)
             if [ "${provider_lc}" = "surfshark" ]; then
@@ -75,11 +90,11 @@ else
                     fi
                 fi
             fi
+        fi
 
-            if [ -z "${config_file}" ]; then
-                log "[OpenVPN] Config not found in provider dir: ${provider_dir}/${name_base}(.ovpn|_${protocol_lc}.ovpn)"
-                exit 1
-            fi
+        if [ -z "${config_file}" ]; then
+            log "[OpenVPN] Config not found in provider dir: ${provider_dir}/${name_base}(.ovpn|_${protocol_lc}.ovpn)"
+            exit 1
         fi
     fi
 fi

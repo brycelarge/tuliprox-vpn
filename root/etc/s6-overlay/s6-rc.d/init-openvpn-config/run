@@ -3,15 +3,8 @@
 
 set -euo pipefail
 
-log() {
-    echo "$*" | ts '%Y-%m-%d %H:%M:%S'
-}
-
-debug_log() {
-    if [ "${DEBUG:-false}" = "true" ]; then
-        log "DEBUG: $*"
-    fi
-}
+# shellcheck source=/scripts/logging.sh
+source /scripts/logging.sh
 
 vpn_dir="/app/config/openvpn"
 mkdir -p "${vpn_dir}"
@@ -45,6 +38,13 @@ fi
 
 if [ "${vpn_provider_lc}" != "custom" ]; then
     provider_src_dir="/etc/openvpn/${vpn_provider_lc}"
+
+    # Allow forced re-download of provider configs
+    if [ "${OPENVPN_FORCE_UPDATE:-false}" = "true" ] && [ -d "${vpn_dir}/${vpn_provider_lc}" ]; then
+        log "[OpenVPN] OPENVPN_FORCE_UPDATE=true, removing stale staged configs"
+        rm -rf "${vpn_dir}/${vpn_provider_lc}"
+    fi
+
     if [ -d "${provider_src_dir}" ] && [ ! -d "${vpn_dir}/${vpn_provider_lc}" ]; then
         if [ -x "${provider_src_dir}/update.sh" ]; then
             log "[OpenVPN] fetching ${vpn_provider_lc} config files"
@@ -119,3 +119,10 @@ if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
 fi
 
 log "[OpenVPN] using config: ${OPENVPN_CONFIG_FILE}"
+
+# Persist resolved paths to s6 container environment so longruns inherit them
+mkdir -p /run/s6/container_environment
+printf '%s' "${OPENVPN_CONFIG_FILE}" > /run/s6/container_environment/OPENVPN_CONFIG_FILE
+if [ -n "${OPENVPN_AUTH_FILE:-}" ]; then
+    printf '%s' "${OPENVPN_AUTH_FILE}" > /run/s6/container_environment/OPENVPN_AUTH_FILE
+fi
