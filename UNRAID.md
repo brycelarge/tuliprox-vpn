@@ -3,7 +3,22 @@
 This container is intended to behave like typical Unraid/LSIO-style containers.
 
 
-## Template fields
+## Installing via Community Apps (easiest)
+
+1. In Unraid, go to the **Apps** tab (install Community Apps plugin if not already installed)
+2. Search for **tuliprox-vpn**
+3. Click **Install** and fill in your VPN credentials and `LOCAL_NETWORK`
+4. Click **Apply**
+
+> If the app isn't showing yet, you can install it manually by adding the template URL directly:
+> **Apps → Settings → Add another template repository** → paste:
+> ```
+> https://raw.githubusercontent.com/brycelarge/unraid-templates/main
+> ```
+> Then search for **tuliprox-vpn**.
+
+
+## Manual template fields
 
 ### Repository
 
