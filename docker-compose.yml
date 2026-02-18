@@ -1,0 +1,56 @@
+services:
+  tuliprox-vpn:
+    image: ghcr.io/brycelarge/tuliprox-vpn:latest
+    platform: linux/amd64
+    pull_policy: never
+    container_name: tuliprox-vpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    ports:
+      - "8901:8901"
+      - "8118:8118"   # Privoxy (only needed if PRIVOXY_ENABLED=true)
+    volumes:
+      - ./data/config:/app/config
+      - ./data/data:/app/data
+      - ./data/backup:/app/backup
+      - ./data/downloads:/app/downloads
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=022
+      - TZ=UTC
+
+      # ── VPN ──────────────────────────────────────────────────────────────
+      - VPN_ENABLED=true
+      # Supported: CUSTOM, PIA, SURFSHARK, IPVANISH, NORDVPN, VYPRVPN, PROTONVPN
+      - OPENVPN_PROVIDER=NORDVPN
+      # Specific config file (optional — omit to use first .ovpn found)
+      - OPENVPN_CONFIG=
+      - OPENVPN_PROTOCOL=udp
+      - OPENVPN_USERNAME=${OPENVPN_USERNAME}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      # Extra openvpn CLI flags (optional)
+      - OPENVPN_OPTIONS=
+      # Set true to force re-download of provider configs on next start
+      - OPENVPN_FORCE_UPDATE=false
+
+      # ── DNS / routing ─────────────────────────────────────────────────────
+      # Comma-separated DNS servers (optional)
+      - NAME_SERVERS=
+      # Comma-separated CIDRs to route outside the tunnel (optional)
+      - LOCAL_NETWORK=
+
+      # ── Privoxy ───────────────────────────────────────────────────────────
+      - PRIVOXY_ENABLED=false
+      - PRIVOXY_PORT=8118
+
+      # ── tuliprox ──────────────────────────────────────────────────────────
+      # Extra CLI args passed to the tuliprox binary (optional)
+      - TULIPROX_ARGS=
+
+      # ── Debug ─────────────────────────────────────────────────────────────
+      - DEBUG=false
+
+    restart: unless-stopped

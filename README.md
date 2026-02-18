@@ -267,6 +267,62 @@ docker run --rm -it \
 ```
 
 
+## Local development (docker compose)
+
+A `docker-compose.yml` is included for local testing.
+
+### 1. Create your `.env` file
+
+Copy the example and fill in your credentials:
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```sh
+OPENVPN_USERNAME=your_service_username
+OPENVPN_PASSWORD=your_service_password
+```
+
+> The `.env` file is gitignored — never commit credentials.
+
+For NordVPN, service credentials are found at:
+https://my.nordaccount.com/dashboard/nordvpn/manual-configuration/
+
+### 2. Configure `docker-compose.yml`
+
+Key variables to set directly in `docker-compose.yml`:
+
+| Variable | Default | Description |
+|---|---|---|
+| `VPN_ENABLED` | `false` | Set `true` to enable OpenVPN |
+| `OPENVPN_PROVIDER` | `CUSTOM` | `NORDVPN`, `PIA`, `SURFSHARK`, `IPVANISH`, `VYPRVPN`, `PROTONVPN`, `CUSTOM` |
+| `OPENVPN_CONFIG` | _(first .ovpn found)_ | Specific config filename |
+| `OPENVPN_FORCE_UPDATE` | `false` | Set `true` to re-download provider configs |
+| `PRIVOXY_ENABLED` | `false` | Enable Privoxy HTTP proxy on port 8118 |
+
+### 3. Start
+
+```sh
+docker compose up -d
+docker compose logs -f
+```
+
+### 4. Stop
+
+```sh
+docker compose down
+```
+
+### Notes
+
+- Volumes are written to `./data/` (gitignored).
+- Requires `NET_ADMIN` cap and `/dev/net/tun` device when `VPN_ENABLED=true` (already set in `docker-compose.yml`).
+- The image is `linux/amd64` only — on Apple Silicon it runs under emulation.
+
+
 ## Unraid
 
 See `UNRAID.md`.
