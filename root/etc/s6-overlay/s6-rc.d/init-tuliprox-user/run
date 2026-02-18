@@ -48,3 +48,14 @@ done
 
 mkdir -p /app/config/logs/tuliprox /app/config/logs/openvpn
 chown -R tuliprox:tuliprox /app/config/logs
+
+# Copy default configs on first boot so tuliprox starts without user intervention
+if [ ! -f /app/config/config.yml ]; then
+    cp /app/defaults/config.yml /app/config/config.yml
+    chown tuliprox:tuliprox /app/config/config.yml
+fi
+
+if [ ! -f /app/config/source.yml ]; then
+    cp /app/defaults/source.yml /app/config/source.yml
+    chown tuliprox:tuliprox /app/config/source.yml
+fi

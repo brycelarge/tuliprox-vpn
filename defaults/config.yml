@@ -1,0 +1,34 @@
+threads: 0
+api:
+  host: 0.0.0.0
+  port: 8901
+  web_root: /app/web
+working_dir: /app/data
+backup_dir: /app/backup
+log:
+  log_level: info
+  sanitize_sensitive_info: true
+  log_active_user: false
+user_access_control: false
+connect_timeout_secs: 6
+update_on_boot: true
+config_hot_reload: false
+accept_insecure_ssl_certificates: false
+web_ui:
+  enabled: true
+  user_ui_enabled: true
+reverse_proxy:
+  resource_rewrite_disabled: false
+  stream:
+    retry: true
+    buffer:
+      enabled: true
+      size: 1024
+    grace_period_millis: 2000
+    grace_period_timeout_secs: 4
+    forced_retry_interval_secs: 0
+    shared_burst_buffer_mb: 12
+  cache:
+    enabled: true
+    size: 100KB
+    dir: /app/data/cache

@@ -89,11 +89,15 @@ build_tag() {
         platforms="$(detect_platform)"
     fi
 
-    local cache_args=(
-        --cache-from "type=registry,ref=${DOCKER_REPO}:${tag}-cache"
-    )
+    local cache_args=( )
+    # Registry cache is optional. GHCR cache pulls can fail with 403 if auth/scopes
+    # are missing or the cache tag doesn't exist yet.
+    # Enable with: REGISTRY_CACHE_FROM=1 ./scripts/build.sh -p -l
     if [ "${PUSH}" = "true" ]; then
         cache_args+=( --cache-to "type=registry,ref=${DOCKER_REPO}:${tag}-cache,mode=max" )
+        if [ "${REGISTRY_CACHE_FROM:-0}" = "1" ]; then
+            cache_args+=( --cache-from "type=registry,ref=${DOCKER_REPO}:${tag}-cache" )
+        fi
     else
         cache_args+=( --cache-to "type=local,dest=/tmp/docker-cache-${tag},mode=max" )
         cache_args+=( --cache-from "type=local,src=/tmp/docker-cache-${tag}" )

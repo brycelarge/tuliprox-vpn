@@ -135,6 +135,7 @@ RUN apk add --no-cache \
         /app/data \
         /app/backup \
         /app/downloads \
+        /app/defaults \
         /app/resources \
         /app/web && \
     chown -R tuliprox:tuliprox /app
@@ -146,6 +147,7 @@ COPY --from=web-build /src/frontend/dist /app/web
 COPY --from=resource-build /src/resources /app/resources
 
 COPY scripts/healthcheck.sh /usr/local/bin/healthcheck.sh
+COPY defaults/ /app/defaults/
 
 COPY root/ /
 COPY scripts/ /scripts/
