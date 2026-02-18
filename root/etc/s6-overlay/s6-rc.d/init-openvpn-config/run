@@ -46,29 +46,35 @@ if [ "${vpn_provider_lc}" != "custom" ]; then
         rm -rf "${provider_dest}"
     fi
 
+    provider_tmp="${provider_dest}.tmp"
+
     if [ ! -d "${provider_dest}" ]; then
-        if [ ! -x "${provider_script}" ]; then
-            log "[OpenVPN] no update script for provider: ${vpn_provider_lc}"
-            exit 1
+        # If a completed .tmp dir exists (download finished but mv didn't), just rename it
+        if [ -f "${provider_tmp}/list.txt" ]; then
+            log "[OpenVPN] completing previous download for ${vpn_provider_lc}"
+            chown -R tuliprox:tuliprox "${provider_tmp}" 2>/dev/null || true
+            mv "${provider_tmp}" "${provider_dest}"
+        else
+            if [ ! -x "${provider_script}" ]; then
+                log "[OpenVPN] no update script for provider: ${vpn_provider_lc}"
+                exit 1
+            fi
+
+            # Download directly into a tmp dir on the volume, then atomically rename
+            # so a partial/interrupted download never blocks future re-downloads
+            rm -rf "${provider_tmp}"
+            mkdir -p "${provider_tmp}"
+
+            # Copy provider scripts into the tmp dir so update.sh runs with volume as CWD
+            cp /etc/openvpn/${vpn_provider_lc}/*.sh "${provider_tmp}/" 2>/dev/null || true
+            chmod +x "${provider_tmp}"/*.sh 2>/dev/null || true
+
+            log "[OpenVPN] downloading ${vpn_provider_lc} configs to ${provider_dest}"
+            (cd "${provider_tmp}" && bash "${provider_script}")
+
+            chown -R tuliprox:tuliprox "${provider_tmp}" 2>/dev/null || true
+            mv "${provider_tmp}" "${provider_dest}"
         fi
-
-        # Download directly into a tmp dir on the volume, then atomically rename
-        # so a partial/interrupted download never blocks future re-downloads
-        provider_tmp="${provider_dest}.tmp"
-        rm -rf "${provider_tmp}"
-        mkdir -p "${provider_tmp}"
-
-        # Copy provider scripts (update.sh etc) into the tmp dir first so
-        # update.sh can be called with the volume dir as its working directory
-        cp /etc/openvpn/${vpn_provider_lc}/*.sh "${provider_tmp}/" 2>/dev/null || true
-        chmod +x "${provider_tmp}"/*.sh 2>/dev/null || true
-
-        log "[OpenVPN] downloading ${vpn_provider_lc} configs to ${provider_dest}"
-        # Run update.sh with the tmp dir as CWD so files land directly on the volume
-        (cd "${provider_tmp}" && bash "${provider_script}")
-
-        chown -R tuliprox:tuliprox "${provider_tmp}" 2>/dev/null || true
-        mv "${provider_tmp}" "${provider_dest}"
         log "[OpenVPN] ${vpn_provider_lc} configs ready at ${provider_dest}"
     else
         debug_log "[OpenVPN] using cached ${vpn_provider_lc} configs from ${provider_dest}"
@@ -118,7 +124,7 @@ if [ -n "${LOCAL_NETWORK:-}" ]; then
 fi
 
 # Validate config + credentials
-validation_out="$(/scripts/openvpn-config-validation.sh 2>&1)"
+validation_out="$(/scripts/openvpn-config-validation.sh)"
 validation_exit=$?
 
 if [ ${validation_exit} -ne 0 ]; then
