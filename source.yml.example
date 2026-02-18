@@ -1,21 +1,24 @@
 ---
-# tuliprox sources and targets configuration
+# tuliprox sources configuration
 # Copy this to your config volume: ./data/config/source.yml
 # Full documentation: https://github.com/euzu/tuliprox/wiki
+# Can also be configured via the GUI node editor at Settings → Sources
+#
+# Valid top-level fields: templates, sources
 
-# Define your IPTV playlist sources here
-sources: []
-# Example:
-# sources:
-#   - name: my-provider
-#     url: http://my-iptv-provider.com/get.php?username=USER&password=PASS&type=m3u_plus&output=ts
-#     epg_url: http://my-iptv-provider.com/xmltv.php?username=USER&password=PASS
-#     targets:
-#       - name: my-output
-#         output:
-#           - type: m3u
-#             filename: playlist.m3u
-#           - type: xmltv
-#             filename: epg.xml
+templates:
+  - name: ALL_CHANNELS
+    value: Group ~ ".*"
 
-# templates: []  # optional reusable template definitions
+sources:
+  - inputs:
+      - name: my-provider
+        type: m3u             # or: xtream
+        url: 'http://YOUR_PROVIDER/get.php?username=USER&password=PASS&type=m3u_plus&output=ts'
+        epg_url: 'http://YOUR_PROVIDER/xmltv.php?username=USER&password=PASS'
+    targets:
+      - name: my_channels
+        filter: "!ALL_CHANNELS!"
+        output:
+          - type: m3u
+          - type: xtream

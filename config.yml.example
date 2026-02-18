@@ -1,7 +1,7 @@
 ---
 # tuliprox configuration
 # Copy this to your config volume: ./data/config/config.yml
-# Full documentation: https://github.com/euzu/tuliprox
+# Full documentation: https://github.com/euzu/tuliprox/wiki
 
 api:
   host: 0.0.0.0
@@ -17,7 +17,7 @@ update_on_boot: false               # fetch playlists on startup
 log:
   log_level: info                   # debug | info | warn | error
   sanitize_sensitive_info: true
-  active_clients: false
+  log_active_user: false
 
 # ── Video / download ──────────────────────────────────────────────────────────
 # video:
