@@ -8,9 +8,6 @@ log "[OpenVPN Surfshark] fetching config files"
 
 REQUEST_URL="https://my.surfshark.com/vpn/api/v1/server/configurations"
 
-# If the script is called from elsewhere
-cd "${0%/*}"
-
 curl -skL "${REQUEST_URL}" -o openvpn.zip
 unzip -jq openvpn.zip
 rm -f openvpn.zip

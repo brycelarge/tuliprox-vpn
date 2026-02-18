@@ -37,30 +37,47 @@ if [ -n "${NAME_SERVERS:-}" ]; then
 fi
 
 if [ "${vpn_provider_lc}" != "custom" ]; then
-    provider_src_dir="/etc/openvpn/${vpn_provider_lc}"
+    provider_script="/etc/openvpn/${vpn_provider_lc}/update.sh"
+    provider_dest="${vpn_dir}/${vpn_provider_lc}"
 
-    # Allow forced re-download of provider configs
-    if [ "${OPENVPN_FORCE_UPDATE:-false}" = "true" ] && [ -d "${vpn_dir}/${vpn_provider_lc}" ]; then
-        log "[OpenVPN] OPENVPN_FORCE_UPDATE=true, removing stale staged configs"
-        rm -rf "${vpn_dir}/${vpn_provider_lc}"
+    # Allow forced re-download
+    if [ "${OPENVPN_FORCE_UPDATE:-false}" = "true" ] && [ -d "${provider_dest}" ]; then
+        log "[OpenVPN] OPENVPN_FORCE_UPDATE=true, removing cached configs"
+        rm -rf "${provider_dest}"
     fi
 
-    if [ -d "${provider_src_dir}" ] && [ ! -d "${vpn_dir}/${vpn_provider_lc}" ]; then
-        if [ -x "${provider_src_dir}/update.sh" ]; then
-            log "[OpenVPN] fetching ${vpn_provider_lc} config files"
-            "${provider_src_dir}/update.sh"
+    if [ ! -d "${provider_dest}" ]; then
+        if [ ! -x "${provider_script}" ]; then
+            log "[OpenVPN] no update script for provider: ${vpn_provider_lc}"
+            exit 1
         fi
 
-        log "[OpenVPN] staging provider configs to ${vpn_dir}/${vpn_provider_lc}"
-        mkdir -p "${vpn_dir}/${vpn_provider_lc}"
-        cp -R "${provider_src_dir}/." "${vpn_dir}/${vpn_provider_lc}/" 2>/dev/null || true
-        chown -R tuliprox:tuliprox "${vpn_dir}/${vpn_provider_lc}" 2>/dev/null || true
+        # Download directly into a tmp dir on the volume, then atomically rename
+        # so a partial/interrupted download never blocks future re-downloads
+        provider_tmp="${provider_dest}.tmp"
+        rm -rf "${provider_tmp}"
+        mkdir -p "${provider_tmp}"
+
+        # Copy provider scripts (update.sh etc) into the tmp dir first so
+        # update.sh can be called with the volume dir as its working directory
+        cp /etc/openvpn/${vpn_provider_lc}/*.sh "${provider_tmp}/" 2>/dev/null || true
+        chmod +x "${provider_tmp}"/*.sh 2>/dev/null || true
+
+        log "[OpenVPN] downloading ${vpn_provider_lc} configs to ${provider_dest}"
+        # Run update.sh with the tmp dir as CWD so files land directly on the volume
+        (cd "${provider_tmp}" && bash "${provider_script}")
+
+        chown -R tuliprox:tuliprox "${provider_tmp}" 2>/dev/null || true
+        mv "${provider_tmp}" "${provider_dest}"
+        log "[OpenVPN] ${vpn_provider_lc} configs ready at ${provider_dest}"
+    else
+        debug_log "[OpenVPN] using cached ${vpn_provider_lc} configs from ${provider_dest}"
     fi
 
-    if [ -d "${vpn_dir}/${vpn_provider_lc}" ]; then
-        : > "${vpn_dir}/${vpn_provider_lc}/list.txt"
-        find "${vpn_dir}/${vpn_provider_lc}" -maxdepth 2 -type f -name '*.ovpn' | while read -r cfg; do
-            echo "$(basename -- "${cfg}")" >> "${vpn_dir}/${vpn_provider_lc}/list.txt"
+    if [ -d "${provider_dest}" ]; then
+        : > "${provider_dest}/list.txt"
+        find "${provider_dest}" -maxdepth 2 -type f -name '*.ovpn' | while read -r cfg; do
+            echo "${cfg#${provider_dest}/}" >> "${provider_dest}/list.txt"
         done
     fi
 else
@@ -122,6 +139,35 @@ log "[OpenVPN] using config: ${OPENVPN_CONFIG_FILE}"
 # Clean only the selected config (not all provider configs)
 debug_log "[OpenVPN] cleaning selected config"
 /scripts/openvpn-config-clean.sh "${OPENVPN_CONFIG_FILE}" || true
+
+# Provider-specific fixes on the selected config only
+cred_file="/app/config/openvpn/${vpn_provider_lc}-openvpn-credentials.txt"
+case "${vpn_provider_lc}" in
+    nordvpn)
+        if grep -q '^cipher AES-256-CBC' "${OPENVPN_CONFIG_FILE}" 2>/dev/null; then
+            sed -i 's/^cipher AES-256-CBC$/cipher AES-256-GCM\ndata-ciphers AES-256-GCM/' "${OPENVPN_CONFIG_FILE}" || true
+        fi
+        sed -i "s|^auth-user-pass.*|auth-user-pass ${cred_file}|" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+    surfshark)
+        sed -i "s/AES-256-CBC/AES-128-GCM/g" "${OPENVPN_CONFIG_FILE}" || true
+        sed -i "s|auth-user-pass.*|auth-user-pass ${cred_file}|g" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+    pia)
+        sed -i "s|auth-user-pass.*|auth-user-pass ${cred_file}|g" "${OPENVPN_CONFIG_FILE}" || true
+        sed -i "s|ca ca\.rsa\.\([0-9]*\)\.crt|ca /app/config/openvpn/pia/ca.rsa.\1.crt|g" "${OPENVPN_CONFIG_FILE}" || true
+        sed -i "s|crl-verify crl\.rsa\.\([0-9]*\)\.pem|crl-verify /app/config/openvpn/pia/crl.rsa.\1.pem|g" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+    ipvanish)
+        sed -i "s|auth-user-pass.*|auth-user-pass ${cred_file}|g" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+    vyprvpn)
+        sed -i "s|auth-user-pass.*|auth-user-pass ${cred_file}|g" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+    protonvpn)
+        sed -i "s|auth-user-pass.*|auth-user-pass ${cred_file}|g" "${OPENVPN_CONFIG_FILE}" || true
+        ;;
+esac
 
 # Persist resolved paths to s6 container environment so longruns inherit them
 mkdir -p /run/s6/container_environment

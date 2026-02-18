@@ -9,9 +9,6 @@ log "[OpenVPN IPVanish] fetching config files"
 base_url="https://configs.ipvanish.com/configs"
 bundle="configs.zip"
 
-# If the script is called from elsewhere
-cd "${0%/*}"
-
 # Clean existing configs (keep scripts)
 find . -type f ! -name '*.sh' -delete
 

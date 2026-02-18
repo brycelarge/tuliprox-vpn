@@ -1,0 +1,15 @@
+---
+# tuliprox sources and targets configuration
+# Copy this to your config volume: ./data/config/source.yml
+# Full documentation: https://github.com/euzu/tuliprox/wiki
+
+# Define your IPTV playlist sources here
+sources: []
+# Example:
+# sources:
+#   - name: my-playlist
+#     url: http://my-iptv-provider.com/playlist.m3u
+#     username: user
+#     password: pass
+
+# templates: []  # optional reusable template definitions

@@ -1,0 +1,69 @@
+---
+# tuliprox configuration
+# Copy this to your config volume: ./data/config/config.yml
+# Full documentation: https://github.com/euzu/tuliprox
+
+api:
+  host: 0.0.0.0
+  port: 8901
+  web_root: /app/web
+
+threads: 0                          # 0 = auto
+working_dir: /app/data
+backup_dir: /app/backup
+update_on_boot: false               # fetch playlists on startup
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+log:
+  log_level: info                   # debug | info | warn | error
+  sanitize_sensitive_info: true
+  active_clients: false
+
+# ── Video / download ──────────────────────────────────────────────────────────
+# video:
+#   web_search: 'https://www.imdb.com/search/title/?title={}'
+#   extensions:
+#     - mkv
+#     - mp4
+#     - avi
+#   download:
+#     directory: /app/downloads
+#     organize_into_directories: true
+#     episode_pattern: '.*(?P<episode>[Ss]\d{1,2}(.*?)[Ee]\d{1,2}).*'
+
+# ── Reverse proxy / stream buffering ─────────────────────────────────────────
+# reverse_proxy:
+#   stream:
+#     retry: true
+#     buffer:
+#       enabled: true
+#       size: 1024
+#   cache:
+#     enabled: true
+#     size: 100KB
+#     dir: /app/data/cache
+
+# ── Web auth ──────────────────────────────────────────────────────────────────
+# web_auth:
+#   enabled: true
+#   secret: change-me
+#   issuer: tuliprox
+#   userfile: user.txt
+
+# ── Schedules ─────────────────────────────────────────────────────────────────
+# schedules:
+#   - schedule: "0 0 8 * * * *"
+#     targets:
+#       - my-target
+
+# ── Messaging (Telegram) ──────────────────────────────────────────────────────
+# messaging:
+#   notify_on:
+#     - error
+#     - info
+#   telegram:
+#     bot_token: '<token>'
+#     chat_ids:
+#       - <chat_id>
+
+# Full field reference: https://github.com/euzu/tuliprox/wiki

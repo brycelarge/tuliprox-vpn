@@ -6,9 +6,6 @@ source /scripts/logging.sh
 
 log "[OpenVPN PIA] fetching config files"
 
-# If the script is called from elsewhere
-cd "${0%/*}"
-
 declare -a CONFIG_URLS=("" "-tcp")
 declare -a CONFIG_FOLDERS=("" "tcp")
 BASE_URL="https://www.privateinternetaccess.com/openvpn/openvpn"

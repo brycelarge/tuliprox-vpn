@@ -6,9 +6,6 @@ source /scripts/logging.sh
 
 log "[OpenVPN ProtonVPN] checking for config files"
 
-# If the script is called from elsewhere
-cd "${0%/*}"
-
 # ProtonVPN does not provide a public anonymous config bundle.
 # You must manually download your .ovpn files from the ProtonVPN dashboard
 # and place them in /app/config/openvpn/protonvpn/ on the host volume.

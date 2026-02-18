@@ -6,8 +6,6 @@ source /scripts/logging.sh
 
 log "[OpenVPN VyprVPN] fetching config files"
 
-cd "${0%/*}"
-
 # VyprVPN no longer provides a public config bundle via a stable URL.
 # Try the last known URL; if it fails, fall back to user-supplied configs.
 REQUEST_URL="https://support.vyprvpn.com/hc/article_attachments/360052617332/Vypr_OpenVPN_20200320.zip"
