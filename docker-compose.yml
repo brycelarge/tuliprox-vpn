@@ -16,7 +16,6 @@ services:
       - ./data/data:/app/data
       - ./data/backup:/app/backup
       - ./data/downloads:/app/downloads
-      - ./data/sidecars:/app/sidecars
     environment:
       - PUID=1000
       - PGID=1000

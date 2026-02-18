@@ -56,10 +56,6 @@ Map these as **Paths** (not Variables):
 - **`/app/downloads`**
   - Suggested host path: `/mnt/user/appdata/tuliprox/downloads`
 
-- **`/app/sidecars`**
-  - Suggested host path: `/mnt/user/appdata/tuliprox/sidecars`
-  - Optional. Drop sidecar apps here to run them inside the container (see [Sidecars](#sidecars)).
-
 If using OpenVPN, place your `.ovpn` files under:
 
 - `/mnt/user/appdata/tuliprox/config/openvpn`
@@ -170,47 +166,7 @@ After starting, you should see the mapped folders owned by your configured IDs (
 - **Host Port**: `8901`
 
 
-## Sidecars
-
-You can run additional processes inside the container by dropping apps into the `/app/sidecars` volume mount.
-
-### Structure
-
-```
-/mnt/user/appdata/tuliprox-vpn/sidecars/
-└── my-epg-scraper/
-    ├── run.sh          # required — entrypoint, must be executable
-    └── env/            # optional — plain key=value files for env vars
-        └── MY_VAR=foo
-```
-
-### `run.sh` example (EPG scraper serving on port 3000)
-
-```sh
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")"
-# install deps on first run
-[ -d node_modules ] || npm install
-exec npx serve -l 3000 .
-```
-
-### How it works
-
-- On container start, `svc-sidecars` scans `/app/sidecars/` for subdirectories containing `run.sh`
-- Each discovered sidecar is supervised independently — crashes are restarted automatically after 5s
-- Sidecars run as the `tuliprox` user (`PUID`/`PGID`)
-- They share the container network, so they can bind ports and be referenced by `localhost` or `127.0.0.1` from `source.yml`
-
-### Reference a sidecar EPG in source.yml
-
-```yaml
-epg:
-  sources:
-    - url: http://127.0.0.1:3000/guide.xml
-```
-
 ## Notes
 
 - If your mapped directories contain a large amount of data, the startup `chown -R` can take time.
-- If you want to disable recursive chown or make it conditional, tell me and I'll add a toggle like `CHOWN_ON_START=true/false`.
+- If you want to disable recursive chown or make it conditional, tell me and I’ll add a toggle like `CHOWN_ON_START=true/false`.
