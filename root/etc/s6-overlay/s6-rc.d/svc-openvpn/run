@@ -8,13 +8,13 @@ source /scripts/logging.sh
 
 if [ "${VPN_ENABLED:-false}" != "true" ]; then
     log "[OpenVPN] VPN disabled (sleeping)"
-    exec s6-sleep infinity
+    exec sleep infinity
 fi
 
 # OPENVPN_CONFIG_FILE is written to the s6 container environment by init-openvpn-config
 if [ -z "${OPENVPN_CONFIG_FILE:-}" ]; then
     log "[OpenVPN] OPENVPN_CONFIG_FILE not set — init-openvpn-config may have failed"
-    exec s6-sleep infinity
+    exec sleep infinity
 fi
 
 openvpn_args=(

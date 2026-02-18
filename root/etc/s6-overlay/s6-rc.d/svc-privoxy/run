@@ -8,7 +8,7 @@ source /scripts/logging.sh
 
 if [ "${VPN_ENABLED:-false}" != "true" ] || [ "${PRIVOXY_ENABLED:-false}" != "true" ]; then
     debug_log "[Privoxy] disabled (sleeping)"
-    exec s6-sleep infinity
+    exec sleep infinity
 fi
 
 timeout_secs="${PRIVOXY_STARTUP_DELAY_SECS:-30}"
