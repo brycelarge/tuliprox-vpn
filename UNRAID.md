@@ -31,17 +31,13 @@ For you:
 - `ghcr.io/brycelarge/tuliprox-vpn:latest`
 
 
-### Network / Port
+### Network / Ports
 
-- **Container Port**: `8901`
-- **Host Port**: `8901` (or whatever you prefer)
-- **Protocol**: `TCP`
-
-If you enable Privoxy:
-
-- **Container Port**: `8118`
-- **Host Port**: `8118` (or whatever you prefer)
-- **Protocol**: `TCP`
+| Container Port | Protocol | Description |
+|---|---|---|
+| `8901` | TCP | Tuliprox web UI, M3U, Xtream Codes, EPG |
+| `5004` | TCP | HDHomeRun emulation (Plex/Emby/Jellyfin DVR) |
+| `8118` | TCP | Privoxy HTTP proxy (optional) |
 
 
 ### Path mappings

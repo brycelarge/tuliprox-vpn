@@ -61,7 +61,9 @@ On container start, an s6 init step will ensure these directories exist and will
 
 ## Ports
 
-- **`8901/tcp`**
+- **`8901/tcp`** — Tuliprox web UI and API (M3U, Xtream, EPG)
+- **`5004/tcp`** — HDHomeRun emulation (Plex/Emby/Jellyfin DVR discovery)
+- **`8118/tcp`** — Privoxy HTTP proxy (optional, only when `PRIVOXY_ENABLED=true`)
 
 
 ## VPN (OpenVPN)
@@ -283,6 +285,7 @@ Build only `next` (develop):
 ```sh
 docker run --rm -it \
   -p 8901:8901 \
+  -p 5004:5004 \
   -e TZ=Europe/Paris \
   -e PUID=99 \
   -e PGID=100 \
@@ -355,6 +358,48 @@ docker compose down
 - Volumes are written to `./data/` (gitignored).
 - Requires `NET_ADMIN` cap and `/dev/net/tun` device when `VPN_ENABLED=true` (already set in `docker-compose.yml`).
 - The image is `linux/amd64` only — on Apple Silicon it runs under emulation.
+
+
+## First boot
+
+On first boot, if `/app/config/config.yml`, `source.yml`, or `api-proxy.yml` are missing, the container copies defaults from `/app/defaults/` automatically. The `api-proxy.yml` host IP is auto-detected from the container's LAN interface.
+
+Edit the generated files in your config volume to suit your setup.
+
+
+## Accessing playlists
+
+After configuring `api-proxy.yml` with your credentials:
+
+- **M3U**: `http://<host>:8901/get.php?username=<user>&password=<pass>`
+- **Xtream Codes**: host `http://<host>:8901`, username/password as configured
+- **EPG (XMLTV)**: `http://<host>:8901/xmltv.php?username=<user>&password=<pass>`
+- **HDHomeRun discovery**: `http://<host>:5004/discover.json`
+
+
+## api-proxy.yml
+
+Required for playlist access. Minimum config:
+
+```yaml
+server:
+  - name: default
+    protocol: http
+    host: 192.168.1.x   # your Unraid/host LAN IP
+    port: '8901'
+    timezone: UTC
+    message: tuliprox
+
+user:
+  - target: my_target
+    credentials:
+      - username: myuser
+        password: mypass
+        proxy: reverse
+        server: default
+```
+
+Usernames must be unique across all targets. The `target` name must match a target defined in `source.yml`.
 
 
 ## Unraid
