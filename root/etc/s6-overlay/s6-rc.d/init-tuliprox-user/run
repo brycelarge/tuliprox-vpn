@@ -41,7 +41,7 @@ fi
 usermod -g "${pgid}" tuliprox 2>/dev/null || usermod -g tuliprox tuliprox
 
 # Ensure app dirs exist and have correct ownership
-for d in /app/config /app/data /app/backup /app/downloads; do
+for d in /app/config /app/data /app/backup /app/downloads /app/epg; do
     mkdir -p "${d}"
     chown -R tuliprox:tuliprox "${d}"
 done
@@ -58,6 +58,11 @@ fi
 if [ ! -f /app/config/source.yml ]; then
     cp /app/defaults/source.yml /app/config/source.yml
     chown tuliprox:tuliprox /app/config/source.yml
+fi
+
+if [ ! -f /app/epg/channels.xml ]; then
+    cp /app/defaults/epg-channels.xml /app/epg/channels.xml
+    chown tuliprox:tuliprox /app/epg/channels.xml
 fi
 
 if [ ! -f /app/config/api-proxy.yml ]; then

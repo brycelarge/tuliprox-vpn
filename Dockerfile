@@ -111,10 +111,13 @@ RUN apk add --no-cache \
         curl \
         dos2unix \
         ffmpeg \
+        git \
         iproute2 \
         iptables \
         jq \
         moreutils \
+        nodejs \
+        npm \
         openvpn \
         privoxy \
         python3 \
@@ -136,6 +139,7 @@ RUN apk add --no-cache \
         /app/backup \
         /app/downloads \
         /app/defaults \
+        /app/epg \
         /app/resources \
         /app/web && \
     chown -R tuliprox:tuliprox /app
@@ -165,7 +169,9 @@ EXPOSE 8901/tcp
 
 EXPOSE 8118/tcp
 
-VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads"]
+EXPOSE 3002/tcp
+
+VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads", "/app/epg"]
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD /usr/local/bin/healthcheck.sh
