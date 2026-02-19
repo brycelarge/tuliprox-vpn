@@ -1,7 +1,7 @@
 # tuliprox VPN (Unraid-ready)
 
 > [!NOTE]
-> Credits to the tuliprox team and all contributors.
+> Credits to the tuliprox team and all contributors. Access the tuliprox documentation [here](https://github.com/euzu/tuliprox)
 
 This repo builds a `tuliprox-vpn` container image that:
 
