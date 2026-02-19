@@ -10,6 +10,7 @@ services:
       - /dev/net/tun
     ports:
       - "8901:8901"
+      - "${HDHOMERUN_PORTS:-5001-5008}:${HDHOMERUN_PORTS:-5001-5008}"   # HDHomeRun devices — set HDHOMERUN_PORTS=5004-5005 to restrict
       - "8118:8118"   # Privoxy (only needed if PRIVOXY_ENABLED=true)
     volumes:
       - ./data/config:/app/config
@@ -54,6 +55,11 @@ services:
       - EPG_GRAB_DAYS=3              # days of EPG data to fetch
       - EPG_GRAB_INTERVAL=86400      # re-scrape interval in seconds (default: 24h)
       - EPG_SERVE_PORT=3002          # port to serve guide.xml on
+
+      # ── HDHomeRun ─────────────────────────────────────────────────────────
+      # Port range for HDHomeRun devices. Must match config.yml hdhomerun.devices[].port values.
+      # Also update the ports mapping above to match.
+      - HDHOMERUN_PORTS=${HDHOMERUN_PORTS:-5001-5008}
 
       # ── tuliprox ──────────────────────────────────────────────────────────
       # Extra CLI args passed to the tuliprox binary (optional)

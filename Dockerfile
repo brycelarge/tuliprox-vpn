@@ -166,9 +166,7 @@ RUN chmod +x /app/tuliprox && \
     find /etc/s6-overlay/s6-rc.d -name 'up' -exec chmod +x {} +
 
 EXPOSE 8901/tcp
-
 EXPOSE 8118/tcp
-
 EXPOSE 3002/tcp
 
 VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads", "/app/epg"]
