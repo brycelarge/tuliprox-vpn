@@ -49,12 +49,58 @@ You can append extra args via `TULIPROX_ARGS`.
   - Optional. Appended to the default args (`-s -p /app/config`).
 
 
+## EPG Scraper (built-in)
+
+The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled, it clones and installs the scraper at runtime (nothing is bundled in the image), scrapes TV guide data directly from broadcaster websites, and serves `guide.xml` locally on port `3002`.
+
+### Environment variables
+
+- **`EPG_SCRAPER_ENABLED`** — Default: `false`. Set to `true` to enable.
+- **`EPG_GRAB_DAYS`** — Default: `3`. Days of EPG data to fetch per run.
+- **`EPG_GRAB_INTERVAL`** — Default: `86400`. Re-scrape interval in seconds (24h).
+- **`EPG_SERVE_PORT`** — Default: `3002`. Port to serve `guide.xml` on.
+
+### How it works
+
+1. On first start, `iptv-org/epg` is cloned into `/app/epg-scraper` (not persisted — re-cloned if missing).
+2. A default DStv ZA `channels.xml` is copied to `/app/epg/channels.xml` if none exists.
+3. An initial grab runs immediately, then repeats every `EPG_GRAB_INTERVAL` seconds.
+4. `guide.xml` is served at `http://localhost:3002/guide.xml`.
+
+### Referencing in source.yml
+
+```yaml
+epg:
+  sources:
+    - url: http://127.0.0.1:3002/guide.xml
+```
+
+### channels.xml
+
+Edit `/app/epg/channels.xml` to control which channels are scraped:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<channels>
+  <!-- DStv South Africa — site_id format: <country_code>#<channel_number> -->
+  <channel site="dstv.com" site_id="zaf#201" lang="en" xmltv_id="">SuperSport Grandstand</channel>
+  <channel site="dstv.com" site_id="zaf#206" lang="en" xmltv_id="">SuperSport Cricket</channel>
+  <channel site="dstv.com" site_id="SABC1.za@SD" lang="en" xmltv_id="">SABC 1</channel>
+</channels>
+```
+
+Full ZA channel list: https://github.com/iptv-org/epg/blob/master/sites/dstv.com/dstv.com_za.channels.xml
+
+All supported sites: https://github.com/iptv-org/epg/tree/master/sites
+
+
 ## Volumes
 
 - **`/app/config`**
 - **`/app/data`**
 - **`/app/backup`**
 - **`/app/downloads`**
+- **`/app/epg`** — EPG scraper output (only needed when `EPG_SCRAPER_ENABLED=true`)
 
 On container start, an s6 init step will ensure these directories exist and will `chown -R` them to the runtime `PUID`/`PGID`.
 
@@ -64,6 +110,7 @@ On container start, an s6 init step will ensure these directories exist and will
 - **`8901/tcp`** — Tuliprox web UI and API (M3U, Xtream, EPG)
 - **`5004/tcp`** — HDHomeRun emulation (Plex/Emby/Jellyfin DVR discovery)
 - **`8118/tcp`** — Privoxy HTTP proxy (optional, only when `PRIVOXY_ENABLED=true`)
+- **`3002/tcp`** — EPG scraper guide server (optional, only when `EPG_SCRAPER_ENABLED=true`)
 
 
 ## VPN (OpenVPN)

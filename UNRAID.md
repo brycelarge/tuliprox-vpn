@@ -38,6 +38,7 @@ For you:
 | `8901` | TCP | Tuliprox web UI, M3U, Xtream Codes, EPG |
 | `5004` | TCP | HDHomeRun emulation (Plex/Emby/Jellyfin DVR) |
 | `8118` | TCP | Privoxy HTTP proxy (optional) |
+| `3002` | TCP | EPG scraper guide server (only when `EPG_SCRAPER_ENABLED=true`) |
 
 
 ### Path mappings
@@ -55,6 +56,10 @@ Map these as **Paths** (not Variables):
 
 - **`/app/downloads`**
   - Suggested host path: `/mnt/user/appdata/tuliprox/downloads`
+
+- **`/app/epg`**
+  - Suggested host path: `/mnt/user/appdata/tuliprox/epg`
+  - Only needed when `EPG_SCRAPER_ENABLED=true`. Contains `channels.xml` (your channel list) and the generated `guide.xml`.
 
 If using OpenVPN, place your `.ovpn` files under:
 
@@ -82,6 +87,60 @@ Add these as **Variables** in the template.
 
 - **`TULIPROX_ARGS`** (optional)
   - Description: Extra CLI args appended to `tuliprox`.
+
+
+## EPG Scraper (built-in)
+
+The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled it scrapes TV guide data directly from broadcaster websites (DStv, etc.) and serves it locally for tuliprox to consume.
+
+### Variables
+
+- **`EPG_SCRAPER_ENABLED`**
+  - Default: `false`
+  - Set to `true` to enable. On first start the scraper is cloned and installed automatically.
+
+- **`EPG_GRAB_DAYS`**
+  - Default: `3`
+  - How many days of EPG data to fetch per run.
+
+- **`EPG_GRAB_INTERVAL`**
+  - Default: `86400` (24 hours)
+  - How often to re-scrape, in seconds.
+
+- **`EPG_SERVE_PORT`**
+  - Default: `3002`
+  - Port the guide is served on inside the container.
+
+### Setup
+
+1. Set `EPG_SCRAPER_ENABLED=true` and map port `3002`.
+2. Map `/app/epg` → `/mnt/user/appdata/tuliprox-vpn/epg`.
+3. Start the container — a default DStv ZA `channels.xml` is copied to `/app/epg/channels.xml` automatically.
+4. Edit `/mnt/user/appdata/tuliprox-vpn/epg/channels.xml` to add/remove channels.
+5. Add the EPG URL to your `source.yml`:
+
+```yaml
+epg:
+  sources:
+    - url: http://127.0.0.1:3002/guide.xml
+```
+
+6. Restart the container to trigger a fresh grab.
+
+### channels.xml format
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<channels>
+  <!-- DStv South Africa: site_id format is <country_code>#<channel_number> -->
+  <channel site="dstv.com" site_id="zaf#201" lang="en" xmltv_id="">SuperSport Grandstand</channel>
+  <channel site="dstv.com" site_id="zaf#206" lang="en" xmltv_id="">SuperSport Cricket</channel>
+  <channel site="dstv.com" site_id="SABC1.za@SD" lang="en" xmltv_id="">SABC 1</channel>
+  <!-- Full ZA channel list: https://github.com/iptv-org/epg/blob/master/sites/dstv.com/dstv.com_za.channels.xml -->
+</channels>
+```
+
+Leave `xmltv_id` empty — tuliprox's `smart_match` handles name matching automatically.
 
 
 ## VPN (OpenVPN)
