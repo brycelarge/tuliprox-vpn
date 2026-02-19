@@ -9,14 +9,10 @@
     1. Edit /app/epg/channels.xml (mapped to your host appdata/epg/ directory)
     2. Restart the container — a fresh grab will run automatically
 
-  Channel ID format for dstv.com:
-    site_id="<country_code>#<channel_number>"
-    e.g. zaf#201 = SuperSport Grandstand (South Africa)
+  Channel format:
+    <channel site="<site>" site_id="<id>" lang="en" xmltv_id="">Channel Name</channel>
 
-  Full ZA channel list:
-    https://github.com/iptv-org/epg/blob/master/sites/dstv.com/dstv.com_za.channels.xml
-
-  Other supported sites:
+  Supported sites and channel IDs:
     https://github.com/iptv-org/epg/tree/master/sites
 
   Once the scraper runs, reference the output in source.yml:
@@ -25,51 +21,10 @@
         - url: http://127.0.0.1:3002/guide.xml
 -->
 <channels>
-  <!-- ── SuperSport ──────────────────────────────────────────────────────── -->
-  <channel site="dstv.com" site_id="zaf#201" lang="en" xmltv_id="">SuperSport Grandstand</channel>
-  <channel site="dstv.com" site_id="zaf#202" lang="en" xmltv_id="">SuperSport PSL</channel>
-  <channel site="dstv.com" site_id="zaf#203" lang="en" xmltv_id="">SuperSport Premier League</channel>
-  <channel site="dstv.com" site_id="zaf#204" lang="en" xmltv_id="">SuperSport La Liga</channel>
-  <channel site="dstv.com" site_id="zaf#205" lang="en" xmltv_id="">SuperSport Football</channel>
-  <channel site="dstv.com" site_id="zaf#206" lang="en" xmltv_id="">SuperSport Cricket</channel>
-  <channel site="dstv.com" site_id="zaf#208" lang="en" xmltv_id="">SuperSport Rugby</channel>
-  <channel site="dstv.com" site_id="zaf#209" lang="en" xmltv_id="">SuperSport Golf</channel>
-  <channel site="dstv.com" site_id="zaf#210" lang="en" xmltv_id="">SuperSport Motorsport</channel>
-  <channel site="dstv.com" site_id="zaf#211" lang="en" xmltv_id="">SuperSport Action</channel>
-  <channel site="dstv.com" site_id="zaf#212" lang="en" xmltv_id="">SuperSport Variety 1</channel>
-  <channel site="dstv.com" site_id="zaf#213" lang="en" xmltv_id="">SuperSport Variety 3</channel>
-  <channel site="dstv.com" site_id="zaf#215" lang="en" xmltv_id="">SuperSport Blitz</channel>
-  <channel site="dstv.com" site_id="zaf#216" lang="en" xmltv_id="">SuperSport School HD</channel>
-
-  <!-- ── SABC / Free-to-air ─────────────────────────────────────────────── -->
-  <channel site="dstv.com" site_id="SABC1.za@SD" lang="en" xmltv_id="">SABC 1</channel>
-  <channel site="dstv.com" site_id="SABC2.za@SD" lang="en" xmltv_id="">SABC 2</channel>
-  <channel site="dstv.com" site_id="SABC3.za@SD" lang="en" xmltv_id="">SABC 3</channel>
-  <channel site="dstv.com" site_id="zaf#404"     lang="en" xmltv_id="">SABC News</channel>
-  <channel site="dstv.com" site_id="zaf#189"     lang="en" xmltv_id="">eNCA</channel>
-  <channel site="dstv.com" site_id="zaf#157"     lang="en" xmltv_id="">1KZN TV</channel>
-
-  <!-- ── Entertainment ──────────────────────────────────────────────────── -->
-  <channel site="dstv.com" site_id="zaf#101" lang="en" xmltv_id="">M-Net HD</channel>
-  <channel site="dstv.com" site_id="zaf#161" lang="en" xmltv_id="">Moja Love</channel>
-  <channel site="dstv.com" site_id="zaf#152" lang="en" xmltv_id="">Africa Magic Epic</channel>
-  <channel site="dstv.com" site_id="zaf#154" lang="en" xmltv_id="">Africa Magic Family</channel>
-  <channel site="dstv.com" site_id="zaf#151" lang="en" xmltv_id="">Africa Magic Showcase</channel>
-  <channel site="dstv.com" site_id="zaf#122" lang="en" xmltv_id="">Comedy Central</channel>
-  <channel site="dstv.com" site_id="zaf#124" lang="en" xmltv_id="">E! Entertainment HD</channel>
-  <channel site="dstv.com" site_id="zaf#135" lang="en" xmltv_id="">TLC HD</channel>
-  <channel site="dstv.com" site_id="zaf#121" lang="en" xmltv_id="">Discovery Channel HD</channel>
-  <channel site="dstv.com" site_id="zaf#136" lang="en" xmltv_id="">Discovery Family HD</channel>
-  <channel site="dstv.com" site_id="zaf#130" lang="en" xmltv_id="">MTV</channel>
-  <channel site="dstv.com" site_id="zaf#117" lang="en" xmltv_id="">Universal TV HD</channel>
-
-  <!-- ── News ───────────────────────────────────────────────────────────── -->
-  <channel site="dstv.com" site_id="zaf#402" lang="en" xmltv_id="">Sky News</channel>
-  <channel site="dstv.com" site_id="zaf#417" lang="en" xmltv_id="">Africanews</channel>
-
-  <!-- ── Kids ───────────────────────────────────────────────────────────── -->
-  <channel site="dstv.com" site_id="zaf#305" lang="en" xmltv_id="">Cartoon Network HD</channel>
-  <channel site="dstv.com" site_id="zaf#307" lang="en" xmltv_id="">Nickelodeon</channel>
-  <channel site="dstv.com" site_id="zaf#308" lang="en" xmltv_id="">NickJr</channel>
-  <channel site="dstv.com" site_id="zaf#309" lang="en" xmltv_id="">NickTOONS</channel>
+  <!--
+    Replace the examples below with channels from your provider.
+    Find your site and channel IDs at:
+    https://github.com/iptv-org/epg/tree/master/sites
+  -->
+  <!-- <channel site="example.com" site_id="example_id" lang="en" xmltv_id="">Channel Name</channel> -->
 </channels>

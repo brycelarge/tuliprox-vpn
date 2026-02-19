@@ -38,8 +38,8 @@ fi
 
 # ── Copy default channels file if none exists ─────────────────────────────────
 if [ ! -f "${CHANNELS_FILE}" ]; then
-    log "[epg-scraper] no channels.xml found — copying default DStv ZA channels"
-    cp "${SCRAPER_DIR}/sites/dstv.com/dstv.com_za.channels.xml" "${CHANNELS_FILE}"
+    log "[epg-scraper] no channels.xml found — copying default channels"
+    cp /app/defaults/epg-channels.xml "${CHANNELS_FILE}"
     chown tuliprox:tuliprox "${CHANNELS_FILE}"
     log "[epg-scraper] edit ${CHANNELS_FILE} to customise channels, then restart"
 fi

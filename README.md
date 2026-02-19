@@ -51,7 +51,7 @@ You can append extra args via `TULIPROX_ARGS`.
 
 ## EPG Scraper (built-in)
 
-The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled, it clones and installs the scraper at runtime (nothing is bundled in the image), scrapes TV guide data directly from broadcaster websites, and serves `guide.xml` locally on port `3002`.
+The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled, it clones and installs the scraper at runtime (nothing is bundled in the image), scrapes TV guide data directly from broadcaster websites (100+ supported), and serves `guide.xml` locally on port `3002`.
 
 ### Environment variables
 
@@ -77,21 +77,14 @@ epg:
 
 ### channels.xml
 
-Edit `/app/epg/channels.xml` to control which channels are scraped:
+Edit `/app/epg/channels.xml` to control which channels are scraped. Find your provider's site and channel IDs at https://github.com/iptv-org/epg/tree/master/sites.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <channels>
-  <!-- DStv South Africa — site_id format: <country_code>#<channel_number> -->
-  <channel site="dstv.com" site_id="zaf#201" lang="en" xmltv_id="">SuperSport Grandstand</channel>
-  <channel site="dstv.com" site_id="zaf#206" lang="en" xmltv_id="">SuperSport Cricket</channel>
-  <channel site="dstv.com" site_id="SABC1.za@SD" lang="en" xmltv_id="">SABC 1</channel>
+  <channel site="example.com" site_id="channel_id" lang="en" xmltv_id="">Channel Name</channel>
 </channels>
 ```
-
-Full ZA channel list: https://github.com/iptv-org/epg/blob/master/sites/dstv.com/dstv.com_za.channels.xml
-
-All supported sites: https://github.com/iptv-org/epg/tree/master/sites
 
 
 ## Volumes

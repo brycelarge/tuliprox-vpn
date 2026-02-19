@@ -91,7 +91,7 @@ Add these as **Variables** in the template.
 
 ## EPG Scraper (built-in)
 
-The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled it scrapes TV guide data directly from broadcaster websites (DStv, etc.) and serves it locally for tuliprox to consume.
+The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled it scrapes TV guide data directly from broadcaster websites (100+ supported) and serves it locally for tuliprox to consume.
 
 ### Variables
 
@@ -115,8 +115,8 @@ The container includes an optional EPG scraper powered by [iptv-org/epg](https:/
 
 1. Set `EPG_SCRAPER_ENABLED=true` and map port `3002`.
 2. Map `/app/epg` → `/mnt/user/appdata/tuliprox-vpn/epg`.
-3. Start the container — a default DStv ZA `channels.xml` is copied to `/app/epg/channels.xml` automatically.
-4. Edit `/mnt/user/appdata/tuliprox-vpn/epg/channels.xml` to add/remove channels.
+3. Start the container — a default `channels.xml` is copied to `/app/epg/channels.xml` automatically.
+4. Edit `/mnt/user/appdata/tuliprox-vpn/epg/channels.xml` to add your channels.
 5. Add the EPG URL to your `source.yml`:
 
 ```yaml
@@ -129,14 +129,12 @@ epg:
 
 ### channels.xml format
 
+Find your provider's site and channel IDs at https://github.com/iptv-org/epg/tree/master/sites.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <channels>
-  <!-- DStv South Africa: site_id format is <country_code>#<channel_number> -->
-  <channel site="dstv.com" site_id="zaf#201" lang="en" xmltv_id="">SuperSport Grandstand</channel>
-  <channel site="dstv.com" site_id="zaf#206" lang="en" xmltv_id="">SuperSport Cricket</channel>
-  <channel site="dstv.com" site_id="SABC1.za@SD" lang="en" xmltv_id="">SABC 1</channel>
-  <!-- Full ZA channel list: https://github.com/iptv-org/epg/blob/master/sites/dstv.com/dstv.com_za.channels.xml -->
+  <channel site="example.com" site_id="channel_id" lang="en" xmltv_id="">Channel Name</channel>
 </channels>
 ```
 
