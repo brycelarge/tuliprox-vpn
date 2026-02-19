@@ -14,7 +14,7 @@ if [ "${EPG_SCRAPER_ENABLED}" != "true" ]; then
 fi
 
 EPG_DIR="/app/epg"
-SCRAPER_DIR="/app/epg-scraper"
+SCRAPER_DIR="${EPG_DIR}/scraper"
 CHANNELS_FILE="${EPG_DIR}/channels.xml"
 OUTPUT_FILE="${EPG_DIR}/guide.xml"
 GRAB_DAYS="${EPG_GRAB_DAYS:-3}"
@@ -24,6 +24,14 @@ REPO_URL="https://github.com/iptv-org/epg.git"
 
 mkdir -p "${EPG_DIR}"
 chown tuliprox:tuliprox "${EPG_DIR}"
+
+# ── Serve immediately if guide already exists (survives restarts) ─────────────
+if [ -f "${OUTPUT_FILE}" ] && [ -d "${SCRAPER_DIR}/node_modules" ]; then
+    log "[epg-scraper] guide.xml found — starting serve immediately"
+    s6-setuidgid tuliprox node "${SCRAPER_DIR}/node_modules/.bin/serve" \
+        -l "${SERVE_PORT}" "${EPG_DIR}" &
+    SERVE_PID=$!
+fi
 
 # ── Install scraper on first run ──────────────────────────────────────────────
 if [ ! -d "${SCRAPER_DIR}/node_modules" ]; then
@@ -69,10 +77,16 @@ fi
     done
 ) &
 
-# ── Serve guide.xml ───────────────────────────────────────────────────────────
+# ── Serve guide.xml (kill early background serve if running, then exec) ───────
 log "[epg-scraper] serving ${EPG_DIR} on port ${SERVE_PORT}"
 log "[epg-scraper] EPG URL: http://localhost:${SERVE_PORT}/guide.xml"
 log "[epg-scraper] Add to source.yml: url: http://127.0.0.1:${SERVE_PORT}/guide.xml"
+
+# Kill the early background serve if we started one, then exec the real one
+if [ -n "${SERVE_PID:-}" ]; then
+    kill "${SERVE_PID}" 2>/dev/null || true
+    wait "${SERVE_PID}" 2>/dev/null || true
+fi
 
 exec s6-setuidgid tuliprox \
     node "${SCRAPER_DIR}/node_modules/.bin/serve" \
