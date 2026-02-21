@@ -47,15 +47,6 @@ services:
       - PRIVOXY_ENABLED=false
       - PRIVOXY_PORT=8118
 
-      # ── EPG Scraper ───────────────────────────────────────────────────────────
-      # Set true to enable the built-in EPG scraper (requires internet access)
-      # Once enabled, add to source.yml: url: http://127.0.0.1:3002/guide.xml
-      # Drop a custom channels.xml into /app/epg/ to control which channels are scraped
-      - EPG_SCRAPER_ENABLED=false
-      - EPG_GRAB_DAYS=3              # days of EPG data to fetch
-      - EPG_GRAB_INTERVAL=86400      # re-scrape interval in seconds (default: 24h)
-      - EPG_SERVE_PORT=3002          # port to serve guide.xml on
-
       # ── HDHomeRun ─────────────────────────────────────────────────────────
       # Port range for HDHomeRun devices. Must match config.yml hdhomerun.devices[].port values.
       # Also update the ports mapping above to match.
@@ -69,4 +60,5 @@ services:
       - DEBUG=true
 
     restart: unless-stopped
+
 

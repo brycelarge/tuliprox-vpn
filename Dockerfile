@@ -101,6 +101,7 @@ RUN for img in channel_unavailable user_connections_exhausted provider_connectio
 FROM brycelarge/alpine-baseimage:3.21
 
 ARG RUST_TARGET=x86_64-unknown-linux-musl
+ARG OPENVPN_TOOLS_REF=main
 
 ENV TZ=UTC \
     CONFIG_DIR=/config
@@ -121,10 +122,14 @@ RUN apk add --no-cache \
         openvpn \
         privoxy \
         python3 \
-        speedtest-cli \
         shadow \
         tzdata \
         unzip && \
+    git clone --depth 1 --branch "${OPENVPN_TOOLS_REF}" \
+        https://github.com/brycelarge/openvpn-buildtools.git /tmp/openvpn-buildtools && \
+    cp -r /tmp/openvpn-buildtools/root/. / && \
+    cp -r /tmp/openvpn-buildtools/scripts/. /scripts/ && \
+    rm -rf /tmp/openvpn-buildtools && \
     addgroup --system tuliprox && \
     adduser \
         --disabled-password \
@@ -159,17 +164,13 @@ COPY scripts/ /scripts/
 RUN chmod +x /app/tuliprox && \
     chmod +x /scripts/*.sh && \
     chmod +x /usr/local/bin/healthcheck.sh && \
-    find /etc/openvpn -name 'update.sh' -exec chmod +x {} + && \
-    find /etc/openvpn -name 'map.sh' -exec chmod +x {} + && \
-    find /etc/openvpn -name 'up.sh' -exec chmod +x {} + && \
     find /etc/s6-overlay/s6-rc.d -name 'run' -exec chmod +x {} + && \
-    find /etc/s6-overlay/s6-rc.d -name 'up' -exec chmod +x {} +
+    find /etc/s6-overlay/s6-rc.d -name 'up'  -exec chmod +x {} +
 
 EXPOSE 8901/tcp
 EXPOSE 8118/tcp
-EXPOSE 3002/tcp
 
-VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads", "/app/epg"]
+VOLUME ["/app/config", "/app/data", "/app/backup", "/app/downloads"]
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD /usr/local/bin/healthcheck.sh
