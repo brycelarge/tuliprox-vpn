@@ -7,7 +7,7 @@ This repo builds a `tuliprox-vpn` container image that:
 
 - Runs on **Alpine** (`brycelarge/alpine-baseimage:3.21`)
 - Uses **s6-overlay** to supervise the `tuliprox` process
-- Includes an **OpenVPN client** (CUSTOM configs or built-in providers) — sourced from [`ghcr.io/brycelarge/alpine-openvpn`](https://github.com/brycelarge/alpine-openvpn)
+- Includes an **OpenVPN client** (CUSTOM configs or built-in providers) — sourced from [`brycelarge/openvpn-buildtools`](https://github.com/brycelarge/openvpn-buildtools)
 - Includes optional **Privoxy** (HTTP proxy) for VPN-routed traffic
 - Includes built-in **speed testing** tooling
 - Supports Unraid-style runtime user mapping via **`PUID` / `PGID` / `UMASK`**
@@ -53,51 +53,12 @@ You can append extra args via `TULIPROX_ARGS`.
   - Optional. Appended to the default args (`-s -p /app/config`).
 
 
-## EPG Scraper (built-in)
-
-The container includes an optional EPG scraper powered by [iptv-org/epg](https://github.com/iptv-org/epg). When enabled, it clones and installs the scraper at runtime (nothing is bundled in the image), scrapes TV guide data directly from broadcaster websites (100+ supported), and serves `guide.xml` locally on port `3002`.
-
-### Environment variables
-
-- **`EPG_SCRAPER_ENABLED`** — Default: `false`. Set to `true` to enable.
-- **`EPG_GRAB_DAYS`** — Default: `3`. Days of EPG data to fetch per run.
-- **`EPG_GRAB_INTERVAL`** — Default: `86400`. Re-scrape interval in seconds (24h).
-- **`EPG_SERVE_PORT`** — Default: `3002`. Port to serve `guide.xml` on.
-
-### How it works
-
-1. On first start, `iptv-org/epg` is cloned into `/app/epg-scraper` (not persisted — re-cloned if missing).
-2. A default DStv ZA `channels.xml` is copied to `/app/epg/channels.xml` if none exists.
-3. An initial grab runs immediately, then repeats every `EPG_GRAB_INTERVAL` seconds.
-4. `guide.xml` is served at `http://localhost:3002/guide.xml`.
-
-### Referencing in source.yml
-
-```yaml
-epg:
-  sources:
-    - url: http://127.0.0.1:3002/guide.xml
-```
-
-### channels.xml
-
-Edit `/app/epg/channels.xml` to control which channels are scraped. Find your provider's site and channel IDs at https://github.com/iptv-org/epg/tree/master/sites.
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<channels>
-  <channel site="example.com" site_id="channel_id" lang="en" xmltv_id="">Channel Name</channel>
-</channels>
-```
-
-
 ## Volumes
 
 - **`/app/config`**
 - **`/app/data`**
 - **`/app/backup`**
 - **`/app/downloads`**
-- **`/app/epg`** — EPG scraper output (only needed when `EPG_SCRAPER_ENABLED=true`)
 
 On container start, an s6 init step will ensure these directories exist and will `chown -R` them to the runtime `PUID`/`PGID`.
 
@@ -107,153 +68,17 @@ On container start, an s6 init step will ensure these directories exist and will
 - **`8901/tcp`** — Tuliprox web UI and API (M3U, Xtream, EPG)
 - **`5004/tcp`** — HDHomeRun emulation (Plex/Emby/Jellyfin DVR discovery)
 - **`8118/tcp`** — Privoxy HTTP proxy (optional, only when `PRIVOXY_ENABLED=true`)
-- **`3002/tcp`** — EPG scraper guide server (optional, only when `EPG_SCRAPER_ENABLED=true`)
 
 
-## VPN (OpenVPN)
+## VPN (OpenVPN) + Privoxy
 
-This image can optionally run an OpenVPN client inside the container.
+OpenVPN and Privoxy support is provided by **[brycelarge/openvpn-buildtools](https://github.com/brycelarge/openvpn-buildtools)**.
 
-Required docker run flags:
+For full documentation on environment variables, supported providers, custom configs, `LOCAL_NETWORK`, Privoxy, and more — see the [openvpn-buildtools README](https://github.com/brycelarge/openvpn-buildtools#readme).
 
-```sh
---cap-add=NET_ADMIN --device=/dev/net/tun
-```
-
-Environment variables:
-
-- **`VPN_ENABLED`**
-  - Default: `false`
-  - Set to `true` to enable OpenVPN.
-
-- **`OPENVPN_PROVIDER`**
-  - Default: `CUSTOM`
-  - Supported:
-    - `CUSTOM`
-    - `PIA`
-    - `SURFSHARK`
-    - `VYPRVPN`
-    - `IPVANISH`
-    - `NORDVPN`
-    - `PROTONVPN`
-
-- **`OPENVPN_CONFIG`**
-  - The config filename (with or without `.ovpn`).
-  - If omitted, the first `*.ovpn` found in `/app/config/openvpn` is used.
-
-When using providers (PIA/SURFSHARK/VYPRVPN/IPVANISH/NORDVPN/PROTONVPN), configs are downloaded on first container start and staged into the config volume at:
-
-- `/app/config/openvpn/<provider>/`
-
-**Configs are persisted across restarts** — the download only happens once (when the provider directory doesn't exist yet).
-
-You can set `OPENVPN_CONFIG` to a filename in that provider folder (with or without `.ovpn`).
-
-Provider scripts live in the image at:
-
-- `/etc/openvpn/<provider>/update.sh`
-
-#### Force re-download of provider configs
-
-To re-download configs (e.g. after a provider updates their servers), either:
-
-**Option A** — set the env var (re-downloads on next start, then resets):
-```yaml
-- OPENVPN_FORCE_UPDATE=true
-```
-
-**Option B** — delete the staged provider directory from your config volume:
-```sh
-rm -rf ./data/config/openvpn/nordvpn   # replace nordvpn with your provider
-docker compose restart
-```
-
-For Surfshark, you can optionally generate a friendly-name mapping file:
-
-```sh
-/etc/openvpn/surfshark/map.sh
-```
-
-Which writes `/app/config/openvpn/surfshark_map.json`. If present, `OPENVPN_CONFIG` can be a friendly key like `za_johannesburg`.
-
-- **`OPENVPN_USERNAME`** / **`OPENVPN_PASSWORD`**
-  - Optional.
-  - If your `.ovpn` uses `auth-user-pass`, credentials will be written to `/app/config/openvpn/openvpn-credentials.txt`.
-
-- **`OPENVPN_OPTIONS`**
-  - Optional extra OpenVPN CLI flags appended to the openvpn command.
-
-- **`NAME_SERVERS`**
-  - Optional comma-separated DNS servers (overwrites `/etc/resolv.conf`).
-
-- **`LOCAL_NETWORK`** ⚠️ **Required when `VPN_ENABLED=true` if you want to access the web UI or any LAN service**
-  - Comma-separated CIDRs that should be routed **outside** the VPN tunnel via your local gateway.
-  - When OpenVPN connects it takes over the default route — without this, all traffic (including port 8901) goes through the tunnel and your host machine can no longer reach the container.
-  - Set this to your LAN subnet. Common values:
-    ```
-    LOCAL_NETWORK=192.168.0.0/24
-    LOCAL_NETWORK=192.168.1.0/24
-    LOCAL_NETWORK=10.0.0.0/24
-    ```
-  - Multiple subnets (comma-separated):
-    ```
-    LOCAL_NETWORK=192.168.0.0/24,10.0.0.0/8
-    ```
-  - Set in your `.env` file:
-    ```sh
-    LOCAL_NETWORK=192.168.0.0/24
-    ```
-  - **If the tuliprox web UI (port 8901) stops responding after VPN connects, this is the fix.**
-
-
-## Privoxy
-
-Privoxy is optional and only runs when:
-
-- `VPN_ENABLED=true`
-- `PRIVOXY_ENABLED=true`
-
-Ports:
-
-- `8118/tcp`
-
-Environment variables:
-
-- **`PRIVOXY_ENABLED`**
-  - Default: `false`
-
-- **`PRIVOXY_PORT`**
-  - Default: `8118`
-
-- **`PRIVOXY_STARTUP_DELAY_SECS`**
-  - Default: `10`
-  - Delay before starting privoxy (gives OpenVPN time to come up).
-
-Logs:
-
-- `/app/config/logs/privoxy`
-
-
-### Custom OpenVPN config (Unraid-friendly)
-
-Mount your `.ovpn` files into:
-
-- `/app/config/openvpn`
-
-Example:
-
-```sh
-docker run --rm -it \
-  --cap-add=NET_ADMIN --device=/dev/net/tun \
-  -e VPN_ENABLED=true \
-  -e OPENVPN_PROVIDER=CUSTOM \
-  -e OPENVPN_CONFIG=my.ovpn \
-  -e OPENVPN_USERNAME='user' \
-  -e OPENVPN_PASSWORD='pass' \
-  -v $(pwd)/config:/app/config \
-  -p 8901:8901 \
-  ghcr.io/brycelarge/tuliprox-vpn:latest
-```
+> ⚠️ The container requires `--cap-add=NET_ADMIN` and `--device=/dev/net/tun` when `VPN_ENABLED=true`.
+>
+> ⚠️ Set `LOCAL_NETWORK` to your LAN subnet (e.g. `192.168.1.0/24`) or the web UI on port `8901` will be unreachable once the VPN connects.
 
 
 ## Speed test
