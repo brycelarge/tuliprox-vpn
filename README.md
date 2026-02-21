@@ -7,10 +7,11 @@ This repo builds a `tuliprox-vpn` container image that:
 
 - Runs on **Alpine** (`brycelarge/alpine-baseimage:3.21`)
 - Uses **s6-overlay** to supervise the `tuliprox` process
-- Includes an **OpenVPN client** (CUSTOM configs or built-in providers)
+- Includes an **OpenVPN client** (CUSTOM configs or built-in providers) — sourced from [`ghcr.io/brycelarge/alpine-openvpn`](https://github.com/brycelarge/alpine-openvpn)
 - Includes optional **Privoxy** (HTTP proxy) for VPN-routed traffic
 - Includes built-in **speed testing** tooling
 - Supports Unraid-style runtime user mapping via **`PUID` / `PGID` / `UMASK`**
+- Published automatically to `ghcr.io/brycelarge/tuliprox-vpn` via GitHub Actions
 
 Upstream project: https://github.com/euzu/tuliprox
 
@@ -281,15 +282,25 @@ Which runs:
 ```
 
 
-## Build
+## Image
+
+```
+ghcr.io/brycelarge/tuliprox-vpn:latest   # master branch
+ghcr.io/brycelarge/tuliprox-vpn:next     # develop branch
+```
+
+Builds are published automatically via GitHub Actions on push to `master` / `develop` and on version tags.
+
+
+## Build locally
 
 ```sh
-docker build -t tuliprox-s6 .
+docker build -t tuliprox-vpn .
 ```
 
 ### Build script (latest + next)
 
-This repo includes a build script similar to the HAProxy project.
+This repo includes a build script.
 
 Build both tags locally:
 
@@ -448,3 +459,4 @@ Usernames must be unique across all targets. The `target` name must match a targ
 ## Unraid
 
 See `UNRAID.md`.
+# openvpn-buildtools
